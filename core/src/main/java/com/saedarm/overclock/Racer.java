@@ -1,0 +1,136 @@
+package com.saedarm.overclock;
+
+import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.math.MathUtils;
+
+/** One glider. Lives entirely in track space: s (distance along), lat (left/right offset). */
+public class Racer {
+    // Tuning. Units: metres and seconds. 1 m/s = 3.6 km/h.
+    public static final float MAX_SPEED = 125f;      // 450 km/h
+    public static final float TURBO_MULT = 1.65f;    // ~740 km/h at full turbo
+    public static final float ACCEL = 55f;
+    public static final float BRAKE = 90f;
+    public static final float COAST = 12f;
+    public static final float STEER_SPEED = 16f;     // lateral m/s at full lock
+    public static final float CENTRIFUGE = 0.08f;    // how hard corners push you outward
+    public static final float HOVER = 0.6f;
+
+    public final String name;
+    public final Color color;
+    public final boolean isPlayer;
+
+    public float s, lat, speed, latVel;
+    public float distance;          // total distance travelled, for ranking
+    public int lap;                 // 0 = on the grid, 1 = first lap ...
+    public float energy = 100f;
+    public float boost;             // drift charge 0..1, stage 1 at 0.5, stage 2 at 1
+    public float turbo;             // seconds of turbo left
+    public float spin;              // seconds of spin-out left (hit by something)
+    public float respawn;           // seconds until back in the race after energy hit 0
+    public float shield;            // seconds of shield left
+    public boolean drifting;
+    public Weapon weapon;
+    public boolean finished;
+    public float finishTime;
+    public int place;
+
+    // AI personality
+    float skill = 1f, line = 0f, fireDelay;
+
+    public Racer(String name, Color color, boolean isPlayer) {
+        this.name = name;
+        this.color = color;
+        this.isPlayer = isPlayer;
+    }
+
+    /** steer -1..1 (right +), throttle/brake/drift as booleans. */
+    public void update(float dt, Track track, float steer, boolean throttle, boolean brake, boolean drift) {
+        shield = Math.max(0, shield - dt);
+        if (respawn > 0) {
+            respawn -= dt;
+            speed = 0; latVel = 0;
+            if (respawn <= 0) { energy = 60f; lat = 0; spin = 0; }
+            return;
+        }
+        if (spin > 0) {
+            spin -= dt;
+            steer = 0; throttle = false; drift = false;
+            speed *= 1f - 1.8f * dt;
+        }
+
+        // --- drift + two-stage turbo
+        boolean wantDrift = drift && Math.abs(steer) > 0.2f && speed > 40f;
+        if (wantDrift) {
+            drifting = true;
+            boost = Math.min(1f, boost + dt * 0.55f * Math.abs(steer));
+            steer *= 1.5f;
+        } else if (drifting) {
+            drifting = false;
+            if (boost >= 1f) turbo = Math.max(turbo, 2.2f);
+            else if (boost >= 0.5f) turbo = Math.max(turbo, 1.1f);
+            boost = 0;
+        }
+        turbo = Math.max(0, turbo - dt);
+
+        // --- speed
+        float top = MAX_SPEED * skill * (turbo > 0 ? TURBO_MULT : 1f);
+        if (turbo > 0) speed += ACCEL * 2.2f * dt;
+        else if (throttle) speed += ACCEL * (1f - 0.6f * speed / top) * dt;
+        else speed -= COAST * dt;
+        if (brake) speed -= BRAKE * dt;
+        if (drifting) speed -= 6f * dt;
+        if (speed > top) speed = MathUtils.lerp(speed, top, 2.5f * dt);
+        speed = Math.max(0, speed);
+
+        // --- steering, plus corners pushing you to the outside
+        float speedFactor = 0.55f + 0.45f * Math.min(1f, speed / MAX_SPEED);
+        latVel = MathUtils.lerp(latVel, steer * STEER_SPEED * speedFactor, Math.min(1f, 9f * dt));
+        latVel -= track.curvatureAt(s) * speed * speed * CENTRIFUGE * dt;
+        lat += latVel * dt;
+
+        // --- walls
+        float half = track.width / 2f - 0.9f;
+        if (Math.abs(lat) > half) {
+            lat = Math.signum(lat) * half;
+            latVel *= -0.35f;
+            speed *= 1f - 1.4f * dt;
+            if (shield <= 0) energy = Math.max(1f, energy - 8f * dt);   // scraping hurts but never kills
+        }
+
+        // --- move along
+        float ds = speed * dt;
+        distance += ds;
+        float before = s;
+        s = track.wrap(s + ds);
+        if (s < before) lap++;
+    }
+
+    /** Hit by a missile or mine. Returns true if it landed. */
+    public boolean hit(float damage) {
+        if (shield > 0 || respawn > 0) return false;
+        energy -= damage;
+        spin = 0.9f;
+        if (energy <= 0) {
+            energy = 0;
+            respawn = 2.5f;
+        }
+        return true;
+    }
+
+    /** Simple AI: follow an inside line, brake for tight bends, push a bit harder when behind the player. */
+    public void updateAi(float dt, Track track, Racer player) {
+        float half = track.width / 2f - 1.2f;
+        float c = track.curvatureAt(s + speed * 0.5f + 12f);
+        float target = MathUtils.clamp(c * 160f, -1f, 1f) * half * 0.7f + line;
+        float steer = MathUtils.clamp((target - lat) * 0.35f, -1f, 1f);
+        boolean brake = Math.abs(c) > 0.045f && speed > MAX_SPEED * 0.7f;
+
+        // rubber band [V]
+        float gap = player.distance - distance;
+        skill = MathUtils.clamp(baseSkill + gap * 0.00015f, 0.8f, 1.08f);
+
+        update(dt, track, steer, true, brake, false);
+    }
+
+    float baseSkill = 1f;
+}

@@ -1,0 +1,26 @@
+apply plugin: 'application'
+
+def mainClassName = 'com.saedarm.overclock.lwjgl3.Lwjgl3Launcher'
+
+dependencies {
+    implementation project(':core')
+    implementation "com.badlogicgames.gdx:gdx-backend-lwjgl3:$gdxVersion"
+    implementation "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop"
+}
+
+sourceSets.main.resources.srcDirs += [rootProject.file('assets').path]
+
+application { mainClass = mainClassName }
+
+tasks.named('run') {
+    workingDir = rootProject.file('assets')
+}
+
+// ./gradlew lwjgl3:jar  ->  lwjgl3/build/libs/Overclock.jar (runnable fat jar)
+tasks.named('jar') {
+    archiveBaseName = 'Overclock'
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    manifest { attributes 'Main-Class': mainClassName }
+    dependsOn configurations.runtimeClasspath
+    from { configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
+}
