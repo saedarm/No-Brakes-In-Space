@@ -4,6 +4,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.glutils.ImmediateModeRenderer20;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType;
 import com.badlogic.gdx.math.MathUtils;
@@ -22,6 +23,8 @@ public class NeonRenderer implements Disposable {
     public Racer lockTarget;                       // who the player's missile would hit (bracketed in red)
 
     private final ShapeRenderer sr = new ShapeRenderer(20000);
+    private final ImmediateModeRenderer20 imr = new ImmediateModeRenderer20(30000, false, true, 0);   // filled pixel aliens
+    private final Vector3 camRight = new Vector3(), seat = new Vector3();
     private final FloatArray trackLines = new FloatArray();   // x1 y1 z1 x2 y2 z2 r g b a
     private final FloatArray stars = new FloatArray();
     private final Track track;
@@ -205,6 +208,51 @@ public class NeonRenderer implements Disposable {
 
         Gdx.gl.glLineWidth(1f);
         Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+        drawAliens(racers, time);
+    }
+
+    /**
+     * Pilots as solid pixel billboards sitting on their gliders. After a crash or knockout
+     * the alien is launched: up and sideways in an arc, tumbling, and lands back in the seat.
+     */
+    private void drawAliens(Array<Racer> racers, float time) {
+        if (racers.size == 0) return;
+        camRight.set(cam.direction).crs(cam.up).nor();
+        imr.begin(cam.combined, GL20.GL_TRIANGLES);
+        for (Racer rc : racers) {
+            pose(rc, time);
+            seat.set(p).mulAdd(u, 0.35f).mulAdd(f, -0.2f);
+            float rot = 0, scale = 1f;
+            if (rc.ejectLeft > 0 && rc.ejectTotal > 0) {
+                float t = 1f - rc.ejectLeft / rc.ejectTotal;              // 0 -> 1 over the flight
+                float side = (rc.distance % 2f) > 1f ? 1f : -1f;
+                float height = rc.ejectTotal > 2f ? 7f : 4.5f;   // low enough to stay in the chase camera's view
+                seat.mulAdd(u, 4f * height * t * (1f - t))
+                    .mulAdd(r, MathUtils.sin(t * MathUtils.PI) * 4f * side)
+                    .mulAdd(f, MathUtils.sin(t * MathUtils.PI) * 2f);
+                rot = t * 720f * side;
+                scale = 1.3f;
+            } else {
+                rot = MathUtils.clamp(rc.latVel * 1.5f, -20f, 20f) + MathUtils.sin(time * 6f + rc.distance) * 4f;  // bobbing
+            }
+            float alpha = fog(seat.x, seat.y, seat.z);
+            if (alpha <= 0) continue;
+            if (rc.ghost > 0 && (int) (time * 12) % 2 == 0) alpha *= 0.3f;
+            rc.alien.draw3D(imr, seat, camRight, cam.up, rot, scale, alpha, rc.hitFlash > 0 && (int) (time * 20) % 2 == 0);
+            if (imr.getNumVertices() > 26000) { imr.end(); imr.begin(cam.combined, GL20.GL_TRIANGLES); }
+        }
+        imr.end();
+    }
+
+    /** Sets p/f/u/r to the ship's world pose: hover, lean into steering, spin, drift yaw. */
+    private void pose(Racer rc, float time) {
+        track.frame(rc.s, p, f, u, r);
+        p.mulAdd(r, rc.lat).mulAdd(u, Racer.HOVER + 0.08f * MathUtils.sin(time * 5f + rc.distance * 0.01f));
+        float lean = MathUtils.clamp(rc.latVel * 1.8f, -30f, 30f);
+        u.rotate(f, lean);
+        r.set(f).crs(u).nor();
+        float yaw = rc.spin > 0 ? rc.spin * 900f : (rc.drifting ? -Math.signum(rc.latVel) * 14f : 0f);
+        if (yaw != 0) { f.rotate(u, yaw); r.set(f).crs(u).nor(); }
     }
 
     private void pass(float width, float alpha, Array<Racer> racers, Combat combat, float time) {
@@ -227,7 +275,41 @@ public class NeonRenderer implements Disposable {
         sr.end();
     }
 
+    private static final Color BLOCK_C = new Color(1f, 0.3f, 0.2f, 1f), SLIDER_C = new Color(1f, 0.8f, 0.15f, 1f),
+            PYLON_C = new Color(1f, 0.55f, 0.2f, 1f);
+    private final Vector3[] box = new Vector3[8];
+    { for (int i = 0; i < 8; i++) box[i] = new Vector3(); }
+
+    /** Wireframe obstacle: a box sitting on the track surface, plus a warning mark. */
+    private void obstacle(Combat.Obstacle o, float time) {
+        Combat.ObstacleType t = o.type;
+        float hw = t.width / 2f, hd = t.depth / 2f, ht = t.height;
+        Color col = t == Combat.ObstacleType.BLOCK ? BLOCK_C : t == Combat.ObstacleType.SLIDER ? SLIDER_C : PYLON_C;
+        for (int i = 0; i < 8; i++) {
+            float ds = (i & 1) == 0 ? -hd : hd, dl = (i & 2) == 0 ? -hw : hw, dh = (i & 4) == 0 ? 0.05f : ht;
+            track.point(o.s + ds, o.lat + dl, dh, box[i]);
+        }
+        int[][] edges = {{0, 1}, {2, 3}, {4, 5}, {6, 7}, {0, 2}, {1, 3}, {4, 6}, {5, 7}, {0, 4}, {1, 5}, {2, 6}, {3, 7}};
+        for (int[] e : edges) line(box[e[0]], box[e[1]], col);
+        if (t == Combat.ObstacleType.BLOCK) {              // big X on the face you drive at
+            line(box[0], box[6], col); line(box[2], box[4], col);
+        } else if (t == Combat.ObstacleType.SLIDER) {      // hazard stripes
+            for (int k = 1; k < 4; k++) {
+                float q = k / 4f;
+                a.set(box[0]).lerp(box[2], q);
+                b.set(box[4]).lerp(box[6], Math.min(1f, q + 0.25f));
+                line(a, b, col);
+            }
+        } else {                                           // pylon: blinking top light
+            if ((int) (time * 4) % 2 == 0) { a.set(box[4]).lerp(box[7], 0.5f); b.set(a).mulAdd(track.up[track.index(o.s)], 0.8f); line(a, b, Color.WHITE); }
+        }
+    }
+
     private void drawCombat(Combat combat, float time) {
+        for (Combat.Obstacle o : combat.obstacles) {
+            Vector3 at = track.pos[track.index(o.s)];
+            if (fog(at.x, at.y, at.z) > 0) obstacle(o, time);
+        }
         for (Combat.Pickup pk : combat.pickups) {
             if (pk.cooldown > 0) continue;
             box(pk.s, pk.lat, 1.2f, 0.7f, time * 3f, c.set(1f, 0.3f, 1f, 1f));
@@ -320,16 +402,8 @@ public class NeonRenderer implements Disposable {
     private final Vector3[] shipPts = {new Vector3(), new Vector3(), new Vector3(), new Vector3(), new Vector3()};
 
     private void ship(Racer rc, float time) {
-        if (rc.respawn > 0 && (int) (time * 10) % 2 == 0) return;   // blink while respawning
-        track.frame(rc.s, p, f, u, r);
-        p.mulAdd(r, rc.lat).mulAdd(u, Racer.HOVER + 0.08f * MathUtils.sin(time * 5f + rc.distance * 0.01f));
-
-        // lean into steering, spin when hit, yaw when drifting
-        float lean = MathUtils.clamp(rc.latVel * 1.8f, -30f, 30f);
-        u.rotate(f, lean);
-        r.set(f).crs(u).nor();
-        float yaw = rc.spin > 0 ? rc.spin * 900f : (rc.drifting ? -Math.signum(rc.latVel) * 14f : 0f);
-        if (yaw != 0) { f.rotate(u, yaw); r.set(f).crs(u).nor(); }
+        if ((rc.respawn > 0 || rc.ghost > 0) && (int) (time * 10) % 2 == 0) return;   // blink while respawning
+        pose(rc, time);
 
         for (int i = 0; i < SHIP.length; i++) {
             shipPts[i].set(p).mulAdd(r, SHIP[i][0]).mulAdd(u, SHIP[i][1]).mulAdd(f, SHIP[i][2]);
@@ -359,5 +433,6 @@ public class NeonRenderer implements Disposable {
     @Override
     public void dispose() {
         sr.dispose();
+        imr.dispose();
     }
 }

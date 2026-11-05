@@ -9,6 +9,9 @@ Only Sam moves things to [E].
   with loops, corkscrews and tunnels; no gravity, you stick to the track surface.
 - [E] My variant: **combat racer** — pickups, weapons, energy, getting knocked out.
 - [E] libGDX, desktop only (core + lwjgl3). Keyboard controls.
+- [E] Low fidelity on purpose: neon wireframe world, chunky pixel aliens.
+- [E] The pilots are little aliens of different shapes and sizes. When you crash, your
+  alien flies out of the glider.
 - [V] Working title "Overclock".
 
 ## Driving
@@ -18,6 +21,9 @@ Only Sam moves things to [E].
 - [V] Top speed 450 km/h, ~740 km/h on turbo.
 - [V] Corners push you to the outside, harder at speed ("you have to steer more").
 - [V] Scraping walls drains energy but can never knock you out by itself.
+- [E] It should be easier to spin out while drifting.
+- [V] Spin-out if you hold a FULL drift longer than 0.6 s ("RELEASE!" flashes), or drift
+  into a wall. A spin costs roughly half your speed for 0.9 s.
 - [?] Air brakes (Q/E) like Wipeout, or keep drift as the only advanced input?
 - [?] Gamepad support.
 
@@ -38,10 +44,23 @@ Only Sam moves things to [E].
 - [?] More weapons: EMP (drains boost of everyone near), rear-firing missile, plasma.
 - [?] Elimination mode (last ship running wins) as a second mode.
 
+## Obstacles
+
+- [E] The tracks need obstacles.
+- [V] Three kinds: BLOCK (wall chunk, red, crash), SLIDER (wall chunk sliding side to
+  side, yellow stripes, crash), PYLON slalom (three posts, spin + 10 damage).
+- [V] Crash = full stop for 1.6 s, 20 damage, alien launched in an arc that lands back in
+  the cockpit (slide whistle), then 1.2 s of blinking crash immunity. Shield = no crash.
+- [V] `obstacles: N` in each track file; layout is seeded by the file name, so it's the
+  same every race. Never on the start straight, recharge strip or pickup rows.
+- [?] Hand-placed obstacles in the track table instead of (or as well as) random ones.
+
 ## Racers
 
-- [V] 4 racers: you + 3 AI (VOLT, EMBER, GLINT) with different skill and awareness
-  (how early they spot threats: 0.9 / 0.7 / 0.5).
+- [V] Six alien species: BLIP, GLORB, ZIP, KRONK, MOOP, SPROING (bitmaps in `Alien.java`;
+  size per species). Pick yours on the menu with LEFT/RIGHT; the 3 rivals are random others.
+- [V] Rivals have different skill and awareness (0.9 / 0.7 / 0.5). They avoid hazards one
+  row at a time and predict sliders, but still crash about once a race on Ringbahn.
 - [V] AI picks a lane that clears every mine ahead, raises a held shield when a missile
   locks on, and otherwise makes one hard last-moment sidestep (missiles follow your lane
   with a lag). `./gradlew balance` reports missile hit rate ~33-43% with AI dodging on.
@@ -49,8 +68,8 @@ Only Sam moves things to [E].
   speed up as it closes, plus a hint (SPACE = SHIELD, or juke). Holding a missile shows
   who it would lock on to, with red brackets on that ship.
 - [V] Light rubber-banding on AI so races stay close.
-- [?] Pilot characters with portraits/reactions (Schnell has 8 pixel buddies).
-- [?] Ship stats (speed / handling / armor) per pilot.
+- [?] Alien reactions (taunt when passing you, face when hit).
+- [?] Stats per species (e.g. GLORB heavy and tanky, SPROING light and twitchy).
 
 ## Tracks
 
@@ -79,4 +98,9 @@ Only Sam moves things to [E].
 
 - [V] Title screen with track select; the selected track orbits in 3D behind the menu.
   ESC in a race → menu, ENTER after the finish → menu.
-- [?] Pilot select (once pilots exist), settings (volume, laps).
+- [V] Pilot select on the menu (LEFT/RIGHT).
+- [E] A ridiculous Mario Kart-style award ceremony at the end.
+- [V] Podium screen ~4 s after you finish (or ENTER): top 3 on a wireframe podium, winner
+  bouncing and flipping under a spinning trophy, confetti, fireworks, fanfare, a silly
+  caption, last place face-down on the floor. ENTER menu, R race again.
+- [?] Settings (volume, laps).

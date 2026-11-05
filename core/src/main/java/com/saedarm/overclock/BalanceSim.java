@@ -20,8 +20,8 @@ public class BalanceSim {
         float seconds = 120f, dt = 1 / 60f;
         for (String path : OverclockGame.TRACKS) {
             Track t = Track.load(new FileHandle(new File("assets/" + path)));
-            for (float aw : new float[]{0f, 1f}) {
-                Combat.missileHits = Combat.mineHits = Combat.missilesFired = 0;
+            for (float aw : new float[]{0.5f, 0.9f}) {   // the sloppiest and sharpest real rivals
+                Combat.missileHits = Combat.mineHits = Combat.missilesFired = Combat.crashes = 0;
                 int kos = 0;
                 for (int race = 0; race < races; race++) {
                     MathUtils.random.setSeed(race);
@@ -41,9 +41,9 @@ public class BalanceSim {
                         for (Racer r : rs) { if (r.burst == 2) kos++; r.burst = 0; }
                     }
                 }
-                System.out.printf("%-13s awareness %.0f | missiles %4d fired, %3.0f%% hit | mine hits %4d | knockouts %3d%n",
+                System.out.printf("%-13s awareness %.1f | missiles %4d fired, %3.0f%% hit | mine hits %4d | obstacle crashes %4d | knockouts %3d%n",
                         t.name, aw, Combat.missilesFired, 100f * Combat.missileHits / Math.max(1, Combat.missilesFired),
-                        Combat.mineHits, kos);
+                        Combat.mineHits, Combat.crashes, kos);
             }
         }
         System.out.printf("(%d races x %.0f s per track, 4 AI racers)%n", races, seconds);

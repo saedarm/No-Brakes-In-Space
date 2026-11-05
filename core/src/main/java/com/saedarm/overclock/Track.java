@@ -29,6 +29,7 @@ public class Track {
     public byte[] tunnel;   // 0 none, 1 octagon, 2 box
     public float minX, maxX, minZ, maxZ;
     public float pitStart = -1, pitEnd = -1;   // recharge strip, metres from the start line
+    public int obstacleCount;                   // `obstacles: N` in the track file
 
     private final Vector3 t1 = new Vector3(), t2 = new Vector3();
 
@@ -45,6 +46,7 @@ public class Track {
         float width = 12f;
         float scale = 1f;
         float[] pit = null;
+        int obstacles = 0;
         Array<Vector3> cps = new Array<>();
         FloatArray rolls = new FloatArray();
         Array<String> tunnels = new Array<>();
@@ -54,6 +56,7 @@ public class Track {
             if (line.startsWith("# ")) name = line.substring(2).trim();
             else if (line.startsWith("width:")) width = Float.parseFloat(line.substring(6).trim());
             else if (line.startsWith("scale:")) scale = Float.parseFloat(line.substring(6).trim());
+            else if (line.startsWith("obstacles:")) obstacles = Integer.parseInt(line.substring(10).trim());
             else if (line.startsWith("pit:")) {
                 String[] p = line.substring(4).trim().split("\\s+");
                 pit = new float[]{Float.parseFloat(p[0]), Float.parseFloat(p[1])};
@@ -72,6 +75,7 @@ public class Track {
         Track t = new Track(file.nameWithoutExtension(), name, width);
         t.build(cps, rolls, tunnels);
         if (pit != null) { t.pitStart = pit[0]; t.pitEnd = pit[1]; }
+        t.obstacleCount = obstacles;
         return t;
     }
 

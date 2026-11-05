@@ -106,4 +106,41 @@ sc = n(0.12)
 sn = noise(0.12)
 save("scrape", [sn[i] * sq(300 * i / RATE) * env(i, sc) for i in range(sc)])
 
+# --- eject: slide whistle up then down (matches the alien's arc), with vibrato
+ej = n(1.5); ph = 0.0; out = []
+for i in range(ej):
+    t = i / ej
+    f = 500 + 1500 * math.sin(math.pi * t) ** 0.8 + 40 * math.sin(2 * math.pi * 7 * i / RATE)
+    ph += f / RATE
+    out.append(math.sin(2 * math.pi * ph) * env(i, ej, 0.02, 0.1))
+save("eject", out)
+
+# --- crash: metallic clang (inharmonic partials) + crunch
+cr = n(0.7)
+cn = lowpass(noise(0.7), 0.4)
+save("crash", [(sum(math.sin(2 * math.pi * f * i / RATE) for f in (220, 347, 513, 761)) * 0.25 * math.exp(-i / RATE * 6)
+                + cn[i] * math.exp(-i / RATE * 12)) for i in range(cr)])
+
+# --- spin-out: descending wobbly whine
+sp = n(0.9); ph = 0.0; out = []
+for i in range(sp):
+    t = i / sp
+    f = 900 - 650 * t + 120 * math.sin(2 * math.pi * 11 * i / RATE)
+    ph += f / RATE
+    out.append(saw(ph) * env(i, sp, 0.01))
+save("spin", lowpass(out, 0.3))
+
+# --- fanfare: ta-ta-ta-taaaa (major arpeggio, brassy square + saw)
+fan = []
+for f, d in ((523, 0.13), (523, 0.13), (523, 0.13), (659, 0.3), (587, 0.15), (659, 0.15), (784, 0.9)):
+    m = n(d)
+    fan += [(0.5 * sq(f * i / RATE) + 0.5 * saw(f * 1.005 * i / RATE)) * env(i, m, 0.01, 0.05) for i in range(m)]
+save("fanfare", lowpass(fan, 0.35))
+
+# --- firework pop: thump + crackle tail
+pp = n(0.6)
+pn = noise(0.6)
+save("pop", [(math.sin(2 * math.pi * 90 * i / RATE) * math.exp(-i / RATE * 25)
+              + pn[i] * (0.6 if random.random() < 0.08 else 0.1) * math.exp(-i / RATE * 5)) for i in range(pp)])
+
 print("wrote", sorted(os.listdir(OUT)))

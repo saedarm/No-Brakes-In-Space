@@ -22,6 +22,13 @@ public class OverclockGame extends Game {
         swap(new MenuScreen(this, selected));
     }
 
+    /** The player's alien, picked on the menu. */
+    public Alien pilot = Alien.BLIP;
+
+    public void showPodium(com.badlogic.gdx.utils.Array<Racer> racers, int trackIndex) {
+        swap(new PodiumScreen(this, racers, trackIndex));
+    }
+
     public void startRace(int trackIndex) {
         swap(new RaceScreen(this, trackIndex));
     }

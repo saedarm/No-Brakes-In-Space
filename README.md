@@ -23,7 +23,8 @@ Runnable jar: `./gradlew lwjgl3:jar` → `lwjgl3/build/libs/Overclock.jar`
 | T | Next track |
 | Esc | Back to menu |
 | M | Music on/off |
-| F1 / F2 | Debug: get a missile / fire one at yourself |
+| Left/Right (menu) | Pick your alien |
+| F1 / F2 / F3 | Debug: get a missile / fire one at yourself / skip to the podium |
 
 Balance check (headless AI races): `./gradlew balance`
 Regenerate sound effects: `python tools/make_sfx.py`

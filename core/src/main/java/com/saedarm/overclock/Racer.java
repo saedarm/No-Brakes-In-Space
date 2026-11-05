@@ -15,6 +15,10 @@ public class Racer {
     public static final float CENTRIFUGE = 0.08f;    // how hard corners push you outward
     public static final float HOVER = 0.6f;
     public static final float PIT_RECHARGE = 30f;    // energy per second on the recharge strip
+    public static final float CRASH_TIME = 1.6f;     // seconds stopped after hitting an obstacle (alien is airborne)
+    public static final float GHOST_TIME = 1.2f;     // can't crash again for this long after getting going
+    public static final float OVERCOOK = 0.6f;       // hold a FULL drift longer than this and you spin out
+    public static final float SPINOUT_TIME = 0.9f;
 
     public final String name;
     public final Color color;
@@ -34,6 +38,12 @@ public class Racer {
     public boolean inPit;           // on the recharge strip this frame
     public float hitFlash;          // seconds of red flash after a hit
     public int burst;               // debris to spawn: 1 = hit, 2 = knocked out (renderer clears it)
+    public float crash;             // seconds left stopped after an obstacle crash
+    public float ghost;             // seconds of crash immunity (blinks)
+    public float ejectLeft, ejectTotal;   // alien is flying out of the cockpit (seconds left / total)
+    public float overcook;          // seconds a full drift has been held
+    public boolean spunOut;         // set on the frame a spin-out starts (HUD/sfx)
+    public Alien alien = Alien.BLIP;
     public Weapon weapon;
     public boolean finished;
     public float finishTime;
@@ -48,21 +58,71 @@ public class Racer {
         this.isPlayer = isPlayer;
     }
 
+    public Racer(Alien alien, boolean isPlayer) {
+        this(isPlayer ? "YOU (" + alien.name + ")" : alien.name, alien.color, isPlayer);
+        this.alien = alien;
+    }
+
+    /** Fling the alien out of the cockpit; it lands back in after `seconds`. */
+    private void eject(float seconds) {
+        ejectTotal = ejectLeft = seconds;
+        Sfx.at(Sfx.EJECT, s, 0.9f);
+    }
+
+    /** Hit an obstacle: full stop, damage, alien goes flying. */
+    public boolean crash(float damage) {
+        if (shield > 0 || respawn > 0 || crash > 0 || ghost > 0) return false;
+        energy -= damage;
+        speed = 0; latVel = 0; drifting = false; boost = 0; overcook = 0; spin = 0;
+        hitFlash = 0.45f;
+        burst = 1;
+        Sfx.at(Sfx.CRASH, s, 1f);
+        if (energy <= 0) {
+            energy = 0;
+            respawn = 2.5f;
+            burst = 2;
+            eject(2.5f);
+        } else {
+            crash = CRASH_TIME;
+            eject(CRASH_TIME);
+        }
+        return true;
+    }
+
+    private void spinOut() {
+        spin = SPINOUT_TIME;
+        drifting = false;
+        boost = 0;
+        overcook = 0;
+        speed *= 0.8f;
+        spunOut = true;
+        Sfx.at(Sfx.SPIN, s, 0.9f);
+    }
+
     /** steer -1..1 (right +), throttle/brake/drift as booleans. */
     public void update(float dt, Track track, float steer, boolean throttle, boolean brake, boolean drift) {
         shield = Math.max(0, shield - dt);
         hitFlash = Math.max(0, hitFlash - dt);
+        ejectLeft = Math.max(0, ejectLeft - dt);
         scraping = false;
+        spunOut = false;
         if (respawn > 0) {
             respawn -= dt;
             speed = 0; latVel = 0;
-            if (respawn <= 0) { energy = 60f; lat = 0; spin = 0; }
+            if (respawn <= 0) { energy = 60f; lat = 0; spin = 0; ghost = GHOST_TIME; }
             return;
         }
+        if (crash > 0) {
+            crash -= dt;
+            speed = 0; latVel = 0;
+            if (crash <= 0) ghost = GHOST_TIME;
+            return;
+        }
+        ghost = Math.max(0, ghost - dt);
         if (spin > 0) {
             spin -= dt;
             steer = 0; throttle = false; drift = false;
-            speed *= 1f - 1.8f * dt;
+            speed *= 1f - 0.5f * dt;
         }
 
         // --- drift + two-stage turbo
@@ -71,7 +131,11 @@ public class Racer {
             drifting = true;
             boost = Math.min(1f, boost + dt * 0.55f * Math.abs(steer));
             steer *= 1.5f;
+            // hold a full drift too long and you lose it
+            if (boost >= 1f) overcook += dt;
+            if (overcook > OVERCOOK) { spinOut(); steer = 0; }
         } else if (drifting) {
+            overcook = 0;
             drifting = false;
             if (boost >= 0.5f) {
                 turbo = Math.max(turbo, boost >= 1f ? 2.2f : 1.1f);
@@ -106,6 +170,7 @@ public class Racer {
             // scraping hurts but never kills, and never on the recharge strip
             if (shield <= 0 && !track.inPit(s)) energy = Math.max(1f, energy - 8f * dt);
             scraping = true;
+            if (drifting) spinOut();          // drifting into a wall = spin
         }
 
         // --- recharge strip: drive over the left third of the track inside the pit zone
@@ -122,7 +187,7 @@ public class Racer {
 
     /** Hit by a missile or mine. Returns true if it landed. */
     public boolean hit(float damage) {
-        if (shield > 0 || respawn > 0) return false;
+        if (shield > 0 || respawn > 0 || crash > 0) return false;
         energy -= damage;
         spin = 0.9f;
         hitFlash = 0.45f;
@@ -131,6 +196,7 @@ public class Racer {
             energy = 0;
             respawn = 2.5f;
             burst = 2;
+            eject(2.5f);
         }
         Sfx.at(burst == 2 ? Sfx.KO : Sfx.HIT, s, 1f);
         return true;
@@ -150,7 +216,7 @@ public class Racer {
         if (combat != null) {
             // mines: find the clear lane closest to where we wanted to go
             float look = (speed * 0.9f + 15f) * awareness;
-            if (combat.mineAhead(this, look) != null) target = combat.clearLane(this, look, target, half);
+            if (combat.hazardAhead(this, look)) target = combat.clearLane(this, look, target, half);
 
             // missile on our tail and no shield: hold the line, then one hard sidestep at the last moment
             // (the missile follows our lane with a lag, so a late sharp move makes it miss)

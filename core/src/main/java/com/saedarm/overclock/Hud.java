@@ -8,6 +8,7 @@ import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Disposable;
@@ -65,7 +66,16 @@ public class Hud implements Disposable {
         }
         boolean low = player.energy < 35f && player.respawn <= 0;
         bar(30, 30, 220, 10, player.energy / 100f, !low ? CYAN : ((int) (raceTime * 6) % 2 == 0 ? Weapon.MINE.color : Color.WHITE));
-        bar(30, 52, 220, 6, player.boost, player.boost >= 1f ? Weapon.TURBO.color : player.boost >= 0.5f ? Color.ORANGE : DIM);
+        boolean cooking = player.drifting && player.overcook > 0;
+        Color driftCol = cooking ? ((int) (raceTime * 16) % 2 == 0 ? Weapon.MINE.color : Color.WHITE)
+                : player.boost >= 1f ? Weapon.TURBO.color : player.boost >= 0.5f ? Color.ORANGE : DIM;
+        bar(30, 52, 220, 6, player.boost, driftCol);
+
+        // pilot portrait: shakes and flashes while your alien is airborne
+        float shake = player.ejectLeft > 0 ? MathUtils.random(-4f, 4f) : 0f;
+        float ppx = 72f / Math.max(player.alien.w, player.alien.h);
+        player.alien.draw2D(sr, 30 + shake, h - 175 + shake, ppx,
+                player.hitFlash > 0 && (int) (raceTime * 20) % 2 == 0 ? 0.3f : 1f);
         sr.setColor(Color.WHITE);
         sr.rect(30 + 110 - 1, 50, 2, 10);   // stage-1 marker
         sr.end();
@@ -92,6 +102,11 @@ public class Hud implements Disposable {
         if (player.inPit && player.energy < 100f) text("RECHARGING", cx, 150, 1.6f, new Color(0.3f, 1f, 0.55f, 1f), true);
         else if (low) text("LOW ENERGY  -  RECHARGE STRIP ON THE START STRAIGHT", cx, 150, 1.1f, Weapon.MINE.color, true);
         if (player.respawn > 0) text("SYSTEMS DOWN", cx, h / 2f + 80, 2.4f, Weapon.MINE.color, true);
+        else if (player.crash > 0) text("CRASHED!", cx, h / 2f + 80, 2.6f, Weapon.MINE.color, true);
+        else if (player.spin > 0 && player.hitFlash <= 0) text("SPUN OUT", cx, h / 2f + 80, 2.2f, Color.ORANGE, true);
+        if (player.ejectLeft > 0) text("WHEEEE!", 30 + 80, h - 110, 1.4f, player.alien.color, false);
+        if (cooking) text("RELEASE!", 260, 76, 1.2f, Weapon.MINE.color, false);
+        else if (player.drifting && player.boost >= 1f) text("FULL", 260, 76, 1f, Weapon.TURBO.color, false);
         if (countdown > 0) text(String.valueOf((int) Math.ceil(countdown)), cx, h / 2f + 120, 6f, Color.WHITE, true);
         else if (countdown > -1f) text("GO", cx, h / 2f + 120, 6f, Weapon.TURBO.color, true);
         if (finished) {
@@ -102,7 +117,7 @@ public class Hud implements Disposable {
                 text(place(r.place) + "   " + r.name + "   " + t, cx, y, 1.4f, r.color, true);
                 y -= 28;
             }
-            text("ENTER  menu      R  restart      T  next track", cx, y - 20, 1.2f, DIM, true);
+            text("ENTER  award ceremony", cx, y - 20, 1.2f, DIM, true);
         }
         text(track.name.toUpperCase(), w - 30 - 200, h - 230, 1.1f, DIM, false);
         text("ARROWS steer/throttle   SHIFT drift   SPACE fire   M music " + (Sfx.musicOn ? "on" : "off") + "   R restart   ESC menu",

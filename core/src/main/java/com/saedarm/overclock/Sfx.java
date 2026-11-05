@@ -15,9 +15,10 @@ import com.badlogic.gdx.utils.ObjectMap;
  */
 public final class Sfx {
     public static final String BEEP = "beep", GO = "go", PICKUP = "pickup", MISSILE = "missile", MINE = "mine",
-            HIT = "hit", KO = "ko", TURBO = "turbo", SHIELD = "shield", LOCK = "lock", SCRAPE = "scrape";
+            HIT = "hit", KO = "ko", TURBO = "turbo", SHIELD = "shield", LOCK = "lock", SCRAPE = "scrape",
+            EJECT = "eject", CRASH = "crash", SPIN = "spin", FANFARE = "fanfare", POP = "pop";
     private static final String[] ALL = {BEEP, GO, PICKUP, MISSILE, MINE, HIT, KO, TURBO, SHIELD, LOCK, SCRAPE,
-            "engine", "recharge"};
+            EJECT, CRASH, SPIN, FANFARE, POP, "engine", "recharge"};
     private static final float HEAR_RANGE = 250f;   // metres along the track
 
     private static final ObjectMap<String, Sound> sounds = new ObjectMap<>();

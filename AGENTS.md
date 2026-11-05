@@ -26,8 +26,13 @@ Write decisions into `GAME_DESIGN.md`, not into chat.
 - `Racer.java` — a glider in **track space**: `s` (distance along) and `lat` (left/right).
   No gravity anywhere; world position = `track.point(s, lat, hover)`. Holds speed,
   drift → two-stage turbo, energy, spin-outs, respawn, and a simple AI driver.
-- `Combat.java` — pickups, missiles (home on the racer ahead), mines (dropped behind),
-  shield, turbo. Also in track space, so a hit is just "close in s and close in lat".
+- `Combat.java` — everything on the track that isn't a racer: pickups, missiles (home on
+  the racer ahead), mines (dropped behind), shield, turbo, and obstacles (blocks, sliders,
+  pylons). All in track space, so a hit is just "close in s and close in lat". AI lane
+  choice (`clearLane`) handles one row of hazards at a time and predicts sliders.
+- `Alien.java` — the six pilot species as tiny bitmaps; draws them flat (HUD/menu) or as
+  3D billboards (on the glider, flying out on a crash, on the podium).
+- `PodiumScreen.java` — the award ceremony after a race.
 - `NeonRenderer.java` — draws everything as lines with additive blending, twice
   (thick + faint, thin + bright) for a cheap glow. Static track lines are baked once.
 - Effects (debris, sparks, shockwave rings) live in `NeonRenderer.update()`. Racers
@@ -45,13 +50,15 @@ Write decisions into `GAME_DESIGN.md`, not into chat.
 ## Debug keys (in a race)
 
 - **F1** — give yourself a missile. **F2** — fire a missile at yourself from 150 m back.
+- **F3** — end the race now and jump to the award ceremony.
 
 ## Adding a track
 
 1. Copy `assets/tracks/ringbahn.md`, edit the table. Roll is degrees (+ = right edge
    down). Tunnel column applies until the next point: `-`, `oct`, `box`.
    `scale:` multiplies every point (sketch small, blow it up). `pit: A B` puts the
-   recharge strip from A to B metres after the start line.
+   recharge strip from A to B metres after the start line. `obstacles: N` scatters N
+   obstacle spots (seeded by file name, so the same every race).
 2. Add the path to `OverclockGame.TRACKS`.
 3. It shows up in the menu automatically; **T** in a race also cycles tracks.
 
@@ -61,5 +68,7 @@ Write decisions into `GAME_DESIGN.md`, not into chat.
   because loops over racers are nested.
 - Screens: sound loops start in `RaceScreen.show()` and stop in `hide()` — not in the
   constructor/dispose, because the new screen is shown before the old one is disposed.
+- Pixel aliens and confetti are filled quads through `ImmediateModeRenderer20` (the
+  ShapeRenderer can't fill in 3D). Keep each batch under its vertex limit (30000).
 - `glLineWidth > 1` needs the default (compatibility) GL context. Don't switch the
   launcher to GL30/core profile without replacing line rendering with quads.

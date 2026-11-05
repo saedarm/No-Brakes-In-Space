@@ -10,6 +10,7 @@ import com.badlogic.gdx.graphics.Texture.TextureFilter;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.utils.Array;
@@ -25,6 +26,7 @@ public class MenuScreen extends ScreenAdapter {
     private final Array<Racer> noRacers = new Array<>();
     private final PerspectiveCamera cam = new PerspectiveCamera(50, 1280, 720);
     private final SpriteBatch batch = new SpriteBatch();
+    private final ShapeRenderer shapes = new ShapeRenderer();
     private final BitmapFont font = new BitmapFont();
     private final GlyphLayout layout = new GlyphLayout();
     private final Matrix4 ortho = new Matrix4();
@@ -58,6 +60,13 @@ public class MenuScreen extends ScreenAdapter {
         }
         if (Gdx.input.isKeyJustPressed(Keys.ESCAPE)) { Gdx.app.exit(); return; }
         if (Gdx.input.isKeyJustPressed(Keys.M)) Sfx.toggleMusic();
+        int na = Alien.values().length;
+        if (Gdx.input.isKeyJustPressed(Keys.LEFT) || Gdx.input.isKeyJustPressed(Keys.A)) {
+            game.pilot = Alien.values()[(game.pilot.ordinal() - 1 + na) % na]; Sfx.play(Sfx.PICKUP, 0.4f);
+        }
+        if (Gdx.input.isKeyJustPressed(Keys.RIGHT) || Gdx.input.isKeyJustPressed(Keys.D)) {
+            game.pilot = Alien.values()[(game.pilot.ordinal() + 1) % na]; Sfx.play(Sfx.PICKUP, 0.4f);
+        }
 
         ensureLoaded(selected);
         Track t = tracks[selected];
@@ -78,6 +87,16 @@ public class MenuScreen extends ScreenAdapter {
 
         Gdx.gl.glEnable(GL20.GL_BLEND);
         Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+
+        // pilot select: big bouncing alien, bottom right
+        Alien al = game.pilot;
+        float size = 130f / Math.max(al.w, al.h) * (0.8f + al.px * 1.2f);   // bigger species look bigger
+        float px0 = w - 260 - al.w * size / 2f, py0 = 150 + Math.abs(MathUtils.sin(time * 4f)) * 14f;
+        shapes.setProjectionMatrix(ortho);
+        shapes.begin(ShapeRenderer.ShapeType.Filled);
+        al.draw2D(shapes, px0, py0, size, 1f);
+        shapes.end();
+
         batch.setProjectionMatrix(ortho);
         batch.begin();
         text("OVERCLOCK", 60, h - 60, 4.2f, CYAN);
@@ -92,8 +111,13 @@ public class MenuScreen extends ScreenAdapter {
         }
         text(String.format("%.1f KM   %d LAPS   4 RACERS", t.length / 1000f, RaceScreen.LAPS), 64, y - 20, 1.2f, CYAN);
 
+        text("PILOT", w - 420, 130, 1.1f, DIM);
+        text("<  " + al.name + "  >", w - 420, 100, 2f, al.color);
+        text(al.tagline, w - 420, 66, 1.1f, Color.WHITE);
+
         if ((int) (time * 2) % 2 == 0) text("PRESS ENTER", 60, 110, 1.6f, Color.WHITE);
-        text("UP/DOWN  track     ENTER  race     M  music " + (Sfx.musicOn ? "ON" : "OFF") + "     ESC  quit", 60, 60, 1.1f, DIM);
+        text("UP/DOWN  track     LEFT/RIGHT  pilot     ENTER  race     M  music " + (Sfx.musicOn ? "ON" : "OFF") + "     ESC  quit",
+                60, 30, 1.1f, DIM);
         batch.end();
     }
 
@@ -121,6 +145,7 @@ public class MenuScreen extends ScreenAdapter {
     public void dispose() {
         for (NeonRenderer r : previews) if (r != null) r.dispose();
         batch.dispose();
+        shapes.dispose();
         font.dispose();
     }
 }

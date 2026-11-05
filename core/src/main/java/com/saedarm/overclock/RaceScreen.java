@@ -25,6 +25,7 @@ public class RaceScreen extends ScreenAdapter {
 
     private float countdown = 3f, raceTime, time;
     private boolean finished;
+    private float afterFinish;   // seconds since the player crossed the line (podium after a few)
     private int lastCount = 4;
     private float lockBeep;
 
@@ -41,11 +42,15 @@ public class RaceScreen extends ScreenAdapter {
         this.combat = new Combat(track);
         this.renderer = new NeonRenderer(track);
 
-        player = new Racer("YOU", new Color(0.35f, 1f, 0.45f, 1f), true);
+        player = new Racer(game.pilot, true);
         racers.add(player);
-        racers.add(ai("VOLT", new Color(1f, 0.3f, 0.9f, 1f), 0.97f, 0.9f));
-        racers.add(ai("EMBER", new Color(1f, 0.55f, 0.15f, 1f), 0.94f, 0.7f));
-        racers.add(ai("GLINT", new Color(0.3f, 0.8f, 1f, 1f), 0.91f, 0.5f));
+        // three rivals: random other species, from sharpest to sloppiest
+        Array<Alien> others = new Array<>(Alien.values());
+        others.removeValue(game.pilot, true);
+        others.shuffle();
+        racers.add(ai(others.get(0), 0.97f, 0.9f));
+        racers.add(ai(others.get(1), 0.94f, 0.7f));
+        racers.add(ai(others.get(2), 0.91f, 0.5f));
 
         // grid: two columns, just behind the start line (crossing it starts lap 1)
         for (int i = 0; i < racers.size; i++) {
@@ -59,8 +64,8 @@ public class RaceScreen extends ScreenAdapter {
     }
 
     /** skill = top-speed factor, awareness = how early it spots mines and missiles (0..1). */
-    private Racer ai(String name, Color c, float skill, float awareness) {
-        Racer a = new Racer(name, c, false);
+    private Racer ai(Alien alien, float skill, float awareness) {
+        Racer a = new Racer(alien, false);
         a.baseSkill = skill;
         a.awareness = awareness;
         a.line = MathUtils.random(-1.5f, 1.5f);
@@ -72,6 +77,14 @@ public class RaceScreen extends ScreenAdapter {
         float dt = Math.min(delta, 1 / 30f);
         time += dt;
         if (handleKeys()) return;   // screen was replaced; stop using this one
+        if (finished) {
+            afterFinish += dt;
+            if (afterFinish > 4f || (afterFinish > 0.5f && Gdx.input.isKeyJustPressed(Keys.ENTER))) {
+                rank();
+                game.showPodium(racers, trackIndex);
+                return;
+            }
+        }
 
         countdown -= dt;
         int count = (int) Math.ceil(countdown);
@@ -125,9 +138,10 @@ public class RaceScreen extends ScreenAdapter {
         if (Gdx.input.isKeyJustPressed(Keys.M)) Sfx.toggleMusic();
         // debug keys for play-testing combat
         if (Gdx.input.isKeyJustPressed(Keys.F1)) player.weapon = Weapon.MISSILE;
+        if (Gdx.input.isKeyJustPressed(Keys.F3)) { rank(); game.showPodium(racers, trackIndex); return true; }
         if (Gdx.input.isKeyJustPressed(Keys.F2) && countdown <= 0) combat.debugMissileAt(player, racers.get(1), 150f);
         if (Gdx.input.isKeyJustPressed(Keys.ESCAPE)
-                || (finished && Gdx.input.isKeyJustPressed(Keys.ENTER))) { game.showMenu(trackIndex); return true; }
+                ) { game.showMenu(trackIndex); return true; }
         if (Gdx.input.isKeyJustPressed(Keys.R)) { game.startRace(trackIndex); return true; }
         if (Gdx.input.isKeyJustPressed(Keys.T)) { game.startRace((trackIndex + 1) % OverclockGame.TRACKS.length); return true; }
         return false;

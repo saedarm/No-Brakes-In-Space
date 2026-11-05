@@ -6,12 +6,14 @@ and a recharge strip on the start straight.
 width: 20
 scale: 2.5
 pit: 60 360
+obstacles: 12
 
 Columns: `x y z` = control point (y is up; multiplied by `scale` to get metres).
 `roll` = bank in degrees (positive = right edge down). `tunnel` applies from this
 point to the next: `-` none, `oct` octagon rings, `box` square rings.
 `pit: A B` = recharge strip from A to B metres after the start line (left third
-of the track).
+of the track). `obstacles: N` = how many obstacle spots to scatter (same layout
+every race).
 
 | x   | y  | z    | roll | tunnel |
 |-----|----|------|------|--------|
