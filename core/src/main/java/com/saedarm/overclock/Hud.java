@@ -105,7 +105,8 @@ public class Hud implements Disposable {
             text("ENTER  menu      R  restart      T  next track", cx, y - 20, 1.2f, DIM, true);
         }
         text(track.name.toUpperCase(), w - 30 - 200, h - 230, 1.1f, DIM, false);
-        text("ARROWS steer/throttle   SHIFT drift   SPACE fire   R restart   ESC menu", cx, h - 12, 0.9f, DIM, true);
+        text("ARROWS steer/throttle   SHIFT drift   SPACE fire   M music " + (Sfx.musicOn ? "on" : "off") + "   R restart   ESC menu",
+                cx, h - 12, 0.9f, DIM, true);
         batch.end();
     }
 

@@ -13,6 +13,17 @@ public class Combat {
     public static class Pickup { public float s, lat, cooldown; }
 
     public static final float MISSILE_RANGE = 400f;
+    /** Pickup odds, same order as Weapon: MISSILE, MINE, SHIELD, TURBO. Missiles kept rare on purpose. */
+    public static final float[] WEAPON_ODDS = {0.15f, 0.30f, 0.25f, 0.30f};
+
+    private static Weapon rollWeapon() {
+        float roll = MathUtils.random(), sum = 0;
+        for (int i = 0; i < WEAPON_ODDS.length; i++) {
+            sum += WEAPON_ODDS[i];
+            if (roll < sum) return Weapon.values()[i];
+        }
+        return Weapon.TURBO;
+    }
     public static int missileHits, mineHits, missilesFired;   // stats (used by balance tests)
 
     public final Array<Missile> missiles = new Array<>();
@@ -41,7 +52,7 @@ public class Combat {
             for (Racer r : racers) {
                 if (r.weapon != null || r.respawn > 0) continue;
                 if (Math.abs(track.delta(r.s, p.s)) < 2.5f && Math.abs(r.lat - p.lat) < 1.8f) {
-                    r.weapon = Weapon.values()[MathUtils.random(Weapon.values().length - 1)];
+                    r.weapon = rollWeapon();
                     p.cooldown = 5f;
                     if (r.isPlayer) Sfx.play(Sfx.PICKUP, 0.7f);
                     break;

@@ -1,7 +1,10 @@
 package com.saedarm.overclock;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Preferences;
+import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.audio.Sound;
+import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.utils.ObjectMap;
 
@@ -23,11 +26,43 @@ public final class Sfx {
     private static long engineId = -1, rechargeId = -1;
     private static float rechargeVol, scrapeTimer;
     public static float volume = 0.8f;
+    public static float musicVolume = 0.45f;
+    public static boolean musicOn = true;
+    private static Music music;
+    private static String musicName;
+    private static Preferences prefs;
 
     private Sfx() {}
 
     public static void load() {
         for (String n : ALL) sounds.put(n, Gdx.audio.newSound(Gdx.files.internal("sfx/" + n + ".wav")));
+        prefs = Gdx.app.getPreferences("overclock");
+        musicOn = prefs.getBoolean("music", true);
+    }
+
+    // ---------------------------------------------------------------- music
+
+    /** Loop assets/music/<name>.ogg (falls back to menu.ogg). Keeps playing if it's already the current song. */
+    public static void playMusic(String name) {
+        FileHandle f = Gdx.files.internal("music/" + name + ".ogg");
+        if (!f.exists()) { name = "menu"; f = Gdx.files.internal("music/menu.ogg"); }
+        if (!name.equals(musicName)) {
+            if (music != null) music.dispose();
+            music = f.exists() ? Gdx.audio.newMusic(f) : null;
+            musicName = name;
+            if (music == null) return;
+            music.setLooping(true);
+            music.setVolume(musicVolume * volume);
+        }
+        if (music != null && musicOn && !music.isPlaying()) music.play();
+    }
+
+    /** M key: turn music on/off; remembered between sessions. */
+    public static void toggleMusic() {
+        musicOn = !musicOn;
+        if (prefs != null) { prefs.putBoolean("music", musicOn); prefs.flush(); }
+        if (music == null) return;
+        if (musicOn) music.play(); else music.pause();
     }
 
     public static void play(String name, float vol) {
@@ -85,6 +120,9 @@ public final class Sfx {
     }
 
     public static void dispose() {
+        if (music != null) music.dispose();
+        music = null;
+        musicName = null;
         for (Sound s : sounds.values()) s.dispose();
         sounds.clear();
     }

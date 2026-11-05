@@ -57,6 +57,7 @@ public class MenuScreen extends ScreenAdapter {
             return;
         }
         if (Gdx.input.isKeyJustPressed(Keys.ESCAPE)) { Gdx.app.exit(); return; }
+        if (Gdx.input.isKeyJustPressed(Keys.M)) Sfx.toggleMusic();
 
         ensureLoaded(selected);
         Track t = tracks[selected];
@@ -92,7 +93,7 @@ public class MenuScreen extends ScreenAdapter {
         text(String.format("%.1f KM   %d LAPS   4 RACERS", t.length / 1000f, RaceScreen.LAPS), 64, y - 20, 1.2f, CYAN);
 
         if ((int) (time * 2) % 2 == 0) text("PRESS ENTER", 60, 110, 1.6f, Color.WHITE);
-        text("UP/DOWN  track     ENTER  race     ESC  quit", 60, 60, 1.1f, DIM);
+        text("UP/DOWN  track     ENTER  race     M  music " + (Sfx.musicOn ? "ON" : "OFF") + "     ESC  quit", 60, 60, 1.1f, DIM);
         batch.end();
     }
 
@@ -101,6 +102,11 @@ public class MenuScreen extends ScreenAdapter {
         font.setColor(col);
         layout.setText(font, s);
         font.draw(batch, layout, x, y);
+    }
+
+    @Override
+    public void show() {
+        Sfx.playMusic("menu");
     }
 
     @Override

@@ -122,6 +122,7 @@ public class RaceScreen extends ScreenAdapter {
 
     private boolean handleKeys() {
         if (Gdx.input.isKeyJustPressed(Keys.SPACE) && countdown <= 0 && !finished) combat.fire(player, racers);
+        if (Gdx.input.isKeyJustPressed(Keys.M)) Sfx.toggleMusic();
         // debug keys for play-testing combat
         if (Gdx.input.isKeyJustPressed(Keys.F1)) player.weapon = Weapon.MISSILE;
         if (Gdx.input.isKeyJustPressed(Keys.F2) && countdown <= 0) combat.debugMissileAt(player, racers.get(1), 150f);
@@ -187,6 +188,7 @@ public class RaceScreen extends ScreenAdapter {
     @Override
     public void show() {
         Sfx.startRace(track, player);
+        Sfx.playMusic(track.id);
     }
 
     @Override

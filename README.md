@@ -22,9 +22,12 @@ Runnable jar: `./gradlew lwjgl3:jar` → `lwjgl3/build/libs/Overclock.jar`
 | R | Restart |
 | T | Next track |
 | Esc | Back to menu |
+| M | Music on/off |
 | F1 / F2 | Debug: get a missile / fire one at yourself |
 
 Balance check (headless AI races): `./gradlew balance`
 Regenerate sound effects: `python tools/make_sfx.py`
+Regenerate music: `python tools/make_music.py` (needs ffmpeg), or drop your own
+`assets/music/<track file name>.ogg`
 
 Read `AGENTS.md` for how the code works and `GAME_DESIGN.md` for what's decided.

@@ -11,7 +11,7 @@ public class Racer {
     public static final float ACCEL = 55f;
     public static final float BRAKE = 90f;
     public static final float COAST = 12f;
-    public static final float STEER_SPEED = 16f;     // lateral m/s at full lock
+    public static final float STEER_SPEED = 22f;     // lateral m/s at full lock (tracks are 20 m wide)
     public static final float CENTRIFUGE = 0.08f;    // how hard corners push you outward
     public static final float HOVER = 0.6f;
     public static final float PIT_RECHARGE = 30f;    // energy per second on the recharge strip

@@ -3,7 +3,7 @@
 The practice course: a vertical loop, a banked hairpin, an S-bend tunnel run
 and a recharge strip on the start straight.
 
-width: 12
+width: 20
 scale: 2.5
 pit: 60 360
 

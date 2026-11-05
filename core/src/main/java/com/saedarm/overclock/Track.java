@@ -19,6 +19,7 @@ import com.badlogic.gdx.utils.FloatArray;
  */
 public class Track {
     public final String name;
+    public final String id;          // file name without extension, e.g. "ringbahn" (picks the music)
     public final float width;
     public float length;
     public float step;
@@ -31,7 +32,8 @@ public class Track {
 
     private final Vector3 t1 = new Vector3(), t2 = new Vector3();
 
-    private Track(String name, float width) {
+    private Track(String id, String name, float width) {
+        this.id = id;
         this.name = name;
         this.width = width;
     }
@@ -67,7 +69,7 @@ public class Track {
             }
         }
         if (cps.size < 4) throw new IllegalArgumentException(file + ": need at least 4 control points");
-        Track t = new Track(name, width);
+        Track t = new Track(file.nameWithoutExtension(), name, width);
         t.build(cps, rolls, tunnels);
         if (pit != null) { t.pitStart = pit[0]; t.pitEnd = pit[1]; }
         return t;
