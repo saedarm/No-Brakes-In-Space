@@ -1,2 +1,2 @@
-rootProject.name = 'Overclock'
+rootProject.name = 'NoBrakesInSpace'
 include 'core', 'lwjgl3'

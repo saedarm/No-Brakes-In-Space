@@ -1,9 +1,9 @@
-package com.saedarm.overclock;
+package com.saedarm.nobrakes;
 
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Screen;
 
-public class OverclockGame extends Game {
+public class NoBrakesGame extends Game {
     /** Add a track: drop a .md table in assets/tracks and list it here. */
     public static final String[] TRACKS = {
             "tracks/ringbahn.md",

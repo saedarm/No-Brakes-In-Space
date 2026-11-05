@@ -1,6 +1,6 @@
 # AGENTS.md — read this first
 
-Overclock is a neon anti-gravity **combat** racer in libGDX (Java 17, desktop only:
+No Brakes in Space is a neon anti-gravity **combat** racer in libGDX (Java 17, desktop only:
 `core` + `lwjgl3`). Inspired by Schnell (deaddreamer99), with weapons.
 
 Every session: read this file, then `GAME_DESIGN.md`, then work.
@@ -45,7 +45,7 @@ Write decisions into `GAME_DESIGN.md`, not into chat.
   the player. WAVs come from `tools/make_sfx.py` (edit a recipe, re-run it).
 - `BalanceSim.java` — headless AI-vs-AI races; `./gradlew balance` prints combat stats.
   Run it after touching weapon or AI numbers.
-- `OverclockGame.java` — the track list and screen switching. `Lwjgl3Launcher` — window config.
+- `NoBrakesGame.java` — the track list and screen switching. `Lwjgl3Launcher` — window config.
 
 ## Debug keys (in a race)
 
@@ -59,7 +59,7 @@ Write decisions into `GAME_DESIGN.md`, not into chat.
    `scale:` multiplies every point (sketch small, blow it up). `pit: A B` puts the
    recharge strip from A to B metres after the start line. `obstacles: N` scatters N
    obstacle spots (seeded by file name, so the same every race).
-2. Add the path to `OverclockGame.TRACKS`.
+2. Add the path to `NoBrakesGame.TRACKS`.
 3. It shows up in the menu automatically; **T** in a race also cycles tracks.
 
 ## Gotchas

@@ -1,4 +1,4 @@
-package com.saedarm.overclock;
+package com.saedarm.nobrakes;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input.Keys;
@@ -44,7 +44,7 @@ public class PodiumScreen extends ScreenAdapter {
             "%s has asked for a recount.",
     };
 
-    private final OverclockGame game;
+    private final NoBrakesGame game;
     private final int trackIndex;
     private final Array<Racer> order = new Array<>();
     private final String caption, lastCaption, trackName;
@@ -63,7 +63,7 @@ public class PodiumScreen extends ScreenAdapter {
     private final Array<Bit> confetti = new Array<>(), sparks = new Array<>();
     private final Vector3 a = new Vector3(), b = new Vector3(), right = new Vector3(), tmp = new Vector3();
 
-    public PodiumScreen(OverclockGame game, Array<Racer> racers, int trackIndex) {
+    public PodiumScreen(NoBrakesGame game, Array<Racer> racers, int trackIndex) {
         this.game = game;
         this.trackIndex = trackIndex;
         order.addAll(racers);
@@ -72,7 +72,7 @@ public class PodiumScreen extends ScreenAdapter {
         caption = win.isPlayer ? String.format(pick(YOU_WIN_LINES), order.get(1).alien.name)
                 : String.format(pick(WIN_LINES), win.alien.name);
         lastCaption = String.format(pick(LAST_LINES), last.alien.name, last.alien.name);
-        trackName = Track.load(Gdx.files.internal(OverclockGame.TRACKS[trackIndex])).name.toUpperCase();
+        trackName = Track.load(Gdx.files.internal(NoBrakesGame.TRACKS[trackIndex])).name.toUpperCase();
         font.getRegion().getTexture().setFilter(TextureFilter.Linear, TextureFilter.Linear);
         cam.near = 0.5f;
         cam.far = 200f;

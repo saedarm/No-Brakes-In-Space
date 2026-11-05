@@ -1,4 +1,4 @@
-package com.saedarm.overclock;
+package com.saedarm.nobrakes;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input.Keys;
@@ -13,7 +13,7 @@ import com.badlogic.gdx.utils.Array;
 public class RaceScreen extends ScreenAdapter {
     public static final int LAPS = 3;
 
-    private final OverclockGame game;
+    private final NoBrakesGame game;
     private final int trackIndex;
     private final Track track;
     private final Combat combat;
@@ -35,10 +35,10 @@ public class RaceScreen extends ScreenAdapter {
     private final Vector3 camBase = new Vector3();
     private float shake;
 
-    public RaceScreen(OverclockGame game, int trackIndex) {
+    public RaceScreen(NoBrakesGame game, int trackIndex) {
         this.game = game;
         this.trackIndex = trackIndex;
-        this.track = Track.load(Gdx.files.internal(OverclockGame.TRACKS[trackIndex]));
+        this.track = Track.load(Gdx.files.internal(NoBrakesGame.TRACKS[trackIndex]));
         this.combat = new Combat(track);
         this.renderer = new NeonRenderer(track);
 
@@ -143,7 +143,7 @@ public class RaceScreen extends ScreenAdapter {
         if (Gdx.input.isKeyJustPressed(Keys.ESCAPE)
                 ) { game.showMenu(trackIndex); return true; }
         if (Gdx.input.isKeyJustPressed(Keys.R)) { game.startRace(trackIndex); return true; }
-        if (Gdx.input.isKeyJustPressed(Keys.T)) { game.startRace((trackIndex + 1) % OverclockGame.TRACKS.length); return true; }
+        if (Gdx.input.isKeyJustPressed(Keys.T)) { game.startRace((trackIndex + 1) % NoBrakesGame.TRACKS.length); return true; }
         return false;
     }
 

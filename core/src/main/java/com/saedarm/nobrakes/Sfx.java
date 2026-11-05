@@ -1,4 +1,4 @@
-package com.saedarm.overclock;
+package com.saedarm.nobrakes;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Preferences;
@@ -37,7 +37,7 @@ public final class Sfx {
 
     public static void load() {
         for (String n : ALL) sounds.put(n, Gdx.audio.newSound(Gdx.files.internal("sfx/" + n + ".wav")));
-        prefs = Gdx.app.getPreferences("overclock");
+        prefs = Gdx.app.getPreferences("no-brakes-in-space");
         musicOn = prefs.getBoolean("music", true);
     }
 

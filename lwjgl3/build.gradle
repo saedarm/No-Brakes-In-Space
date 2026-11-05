@@ -1,6 +1,6 @@
 apply plugin: 'application'
 
-def mainClassName = 'com.saedarm.overclock.lwjgl3.Lwjgl3Launcher'
+def mainClassName = 'com.saedarm.nobrakes.lwjgl3.Lwjgl3Launcher'
 
 dependencies {
     implementation project(':core')
@@ -16,9 +16,9 @@ tasks.named('run') {
     workingDir = rootProject.file('assets')
 }
 
-// ./gradlew lwjgl3:jar  ->  lwjgl3/build/libs/Overclock.jar (runnable fat jar)
+// ./gradlew lwjgl3:jar  ->  lwjgl3/build/libs/NoBrakesInSpace.jar (runnable fat jar)
 tasks.named('jar') {
-    archiveBaseName = 'Overclock'
+    archiveBaseName = 'NoBrakesInSpace'
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     manifest { attributes 'Main-Class': mainClassName }
     dependsOn configurations.runtimeClasspath

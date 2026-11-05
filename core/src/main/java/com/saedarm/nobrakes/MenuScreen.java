@@ -1,4 +1,4 @@
-package com.saedarm.overclock;
+package com.saedarm.nobrakes;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input.Keys;
@@ -20,9 +20,9 @@ public class MenuScreen extends ScreenAdapter {
     private static final Color CYAN = new Color(0.3f, 0.85f, 1f, 1f);
     private static final Color DIM = new Color(0.5f, 0.55f, 0.65f, 1f);
 
-    private final OverclockGame game;
-    private final Track[] tracks = new Track[OverclockGame.TRACKS.length];
-    private final NeonRenderer[] previews = new NeonRenderer[OverclockGame.TRACKS.length];
+    private final NoBrakesGame game;
+    private final Track[] tracks = new Track[NoBrakesGame.TRACKS.length];
+    private final NeonRenderer[] previews = new NeonRenderer[NoBrakesGame.TRACKS.length];
     private final Array<Racer> noRacers = new Array<>();
     private final PerspectiveCamera cam = new PerspectiveCamera(50, 1280, 720);
     private final SpriteBatch batch = new SpriteBatch();
@@ -33,7 +33,7 @@ public class MenuScreen extends ScreenAdapter {
     private int selected;
     private float time, w = 1280, h = 720;
 
-    public MenuScreen(OverclockGame game, int selected) {
+    public MenuScreen(NoBrakesGame game, int selected) {
         this.game = game;
         this.selected = selected;
         font.getRegion().getTexture().setFilter(TextureFilter.Linear, TextureFilter.Linear);
@@ -43,7 +43,7 @@ public class MenuScreen extends ScreenAdapter {
 
     private void ensureLoaded(int i) {
         if (tracks[i] != null) return;
-        tracks[i] = Track.load(Gdx.files.internal(OverclockGame.TRACKS[i]));
+        tracks[i] = Track.load(Gdx.files.internal(NoBrakesGame.TRACKS[i]));
         previews[i] = new NeonRenderer(tracks[i]);
     }
 
@@ -99,8 +99,8 @@ public class MenuScreen extends ScreenAdapter {
 
         batch.setProjectionMatrix(ortho);
         batch.begin();
-        text("OVERCLOCK", 60, h - 60, 4.2f, CYAN);
-        text("ANTI-GRAVITY COMBAT RACING", 64, h - 128, 1.2f, DIM);
+        text("NO BRAKES IN SPACE", 60, h - 60, 4.2f, CYAN);
+        text("A MARTIAN DEMOLITION PRIX", 64, h - 128, 1.2f, DIM);
 
         float y = h / 2f + 60;
         for (int i = 0; i < n; i++) {

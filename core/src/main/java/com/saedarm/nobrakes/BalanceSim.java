@@ -1,4 +1,4 @@
-package com.saedarm.overclock;
+package com.saedarm.nobrakes;
 
 import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.Color;
@@ -18,7 +18,7 @@ public class BalanceSim {
         com.badlogic.gdx.utils.Collections.allocateIterators = true;
         int races = 40;
         float seconds = 120f, dt = 1 / 60f;
-        for (String path : OverclockGame.TRACKS) {
+        for (String path : NoBrakesGame.TRACKS) {
             Track t = Track.load(new FileHandle(new File("assets/" + path)));
             for (float aw : new float[]{0.5f, 0.9f}) {   // the sloppiest and sharpest real rivals
                 Combat.missileHits = Combat.mineHits = Combat.missilesFired = Combat.crashes = 0;

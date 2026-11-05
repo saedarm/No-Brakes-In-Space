@@ -12,7 +12,8 @@ Only Sam moves things to [E].
 - [E] Low fidelity on purpose: neon wireframe world, chunky pixel aliens.
 - [E] The pilots are little aliens of different shapes and sizes. When you crash, your
   alien flies out of the glider.
-- [V] Working title "Overclock".
+- [E] Name: **No Brakes in Space** (was the working title "Overclock").
+- [V] Menu subtitle: "A Martian Demolition Prix".
 
 ## Driving
 

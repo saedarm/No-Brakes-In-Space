@@ -1,4 +1,6 @@
-# Overclock
+# No Brakes in Space
+
+*A Martian Demolition Prix.*
 
 A neon anti-gravity combat racer in libGDX. Glowing wireframe tracks float in space,
 with loops, corkscrews and tunnels. Grab pickups and knock out your rivals with
@@ -8,14 +10,14 @@ missiles and mines.
 
     ./gradlew lwjgl3:run
 
-Runnable jar: `./gradlew lwjgl3:jar` → `lwjgl3/build/libs/Overclock.jar`
+Runnable jar: `./gradlew lwjgl3:jar` → `lwjgl3/build/libs/NoBrakesInSpace.jar`
 
 ## Controls
 
 | Key | Action |
 |-----|--------|
 | Up / W | Accelerate |
-| Down / S | Brake |
+| Down / S | Brake (despite the name) |
 | Left/Right, A/D | Steer |
 | Shift + steer | Drift (charges turbo; release to fire it) |
 | Space | Use item |
