@@ -14,6 +14,7 @@ public class Racer {
     public static final float STEER_SPEED = 16f;     // lateral m/s at full lock
     public static final float CENTRIFUGE = 0.08f;    // how hard corners push you outward
     public static final float HOVER = 0.6f;
+    public static final float PIT_RECHARGE = 30f;    // energy per second on the recharge strip
 
     public final String name;
     public final Color color;
@@ -29,6 +30,10 @@ public class Racer {
     public float respawn;           // seconds until back in the race after energy hit 0
     public float shield;            // seconds of shield left
     public boolean drifting;
+    public boolean scraping;        // touching a wall this frame (sparks)
+    public boolean inPit;           // on the recharge strip this frame
+    public float hitFlash;          // seconds of red flash after a hit
+    public int burst;               // debris to spawn: 1 = hit, 2 = knocked out (renderer clears it)
     public Weapon weapon;
     public boolean finished;
     public float finishTime;
@@ -46,6 +51,8 @@ public class Racer {
     /** steer -1..1 (right +), throttle/brake/drift as booleans. */
     public void update(float dt, Track track, float steer, boolean throttle, boolean brake, boolean drift) {
         shield = Math.max(0, shield - dt);
+        hitFlash = Math.max(0, hitFlash - dt);
+        scraping = false;
         if (respawn > 0) {
             respawn -= dt;
             speed = 0; latVel = 0;
@@ -95,7 +102,12 @@ public class Racer {
             latVel *= -0.35f;
             speed *= 1f - 1.4f * dt;
             if (shield <= 0) energy = Math.max(1f, energy - 8f * dt);   // scraping hurts but never kills
+            scraping = true;
         }
+
+        // --- recharge strip: drive over the left third of the track inside the pit zone
+        inPit = track.inPit(s) && lat < -track.width / 6f;
+        if (inPit) energy = Math.min(100f, energy + PIT_RECHARGE * dt);
 
         // --- move along
         float ds = speed * dt;
@@ -110,9 +122,12 @@ public class Racer {
         if (shield > 0 || respawn > 0) return false;
         energy -= damage;
         spin = 0.9f;
+        hitFlash = 0.45f;
+        burst = 1;
         if (energy <= 0) {
             energy = 0;
             respawn = 2.5f;
+            burst = 2;
         }
         return true;
     }
@@ -122,6 +137,7 @@ public class Racer {
         float half = track.width / 2f - 1.2f;
         float c = track.curvatureAt(s + speed * 0.5f + 12f);
         float target = MathUtils.clamp(c * 160f, -1f, 1f) * half * 0.7f + line;
+        if (energy < 55f && track.inPit(s + 40f)) target = -half * 0.75f;   // go recharge
         float steer = MathUtils.clamp((target - lat) * 0.35f, -1f, 1f);
         boolean brake = Math.abs(c) > 0.045f && speed > MAX_SPEED * 0.7f;
 

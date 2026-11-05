@@ -50,7 +50,12 @@ public class Hud implements Disposable {
         sr.end();
 
         sr.begin(ShapeType.Filled);
-        bar(30, 30, 220, 10, player.energy / 100f, player.energy > 35 ? CYAN : Weapon.MINE.color);
+        if (player.hitFlash > 0) {
+            sr.setColor(1f, 0.1f, 0.15f, player.hitFlash * 0.45f);
+            sr.rect(0, 0, w, h);
+        }
+        boolean low = player.energy < 35f && player.respawn <= 0;
+        bar(30, 30, 220, 10, player.energy / 100f, !low ? CYAN : ((int) (raceTime * 6) % 2 == 0 ? Weapon.MINE.color : Color.WHITE));
         bar(30, 52, 220, 6, player.boost, player.boost >= 1f ? Weapon.TURBO.color : player.boost >= 0.5f ? Color.ORANGE : DIM);
         sr.setColor(Color.WHITE);
         sr.rect(30 + 110 - 1, 50, 2, 10);   // stage-1 marker
@@ -65,6 +70,8 @@ public class Hud implements Disposable {
         text("ENERGY", 260, 42, 1f, DIM, false);
         text("DRIFT", 260, 60, 1f, DIM, false);
         if (player.weapon != null) text("[ " + player.weapon.label + " ]  SPACE", 30, 100, 1.4f, player.weapon.color, false);
+        if (player.inPit && player.energy < 100f) text("RECHARGING", cx, 150, 1.6f, new Color(0.3f, 1f, 0.55f, 1f), true);
+        else if (low) text("LOW ENERGY  -  RECHARGE STRIP ON THE START STRAIGHT", cx, 150, 1.1f, Weapon.MINE.color, true);
         if (player.respawn > 0) text("SYSTEMS DOWN", cx, h / 2f + 80, 2.4f, Weapon.MINE.color, true);
         if (countdown > 0) text(String.valueOf((int) Math.ceil(countdown)), cx, h / 2f + 120, 6f, Color.WHITE, true);
         else if (countdown > -1f) text("GO", cx, h / 2f + 120, 6f, Weapon.TURBO.color, true);
@@ -104,6 +111,13 @@ public class Hud implements Disposable {
         sr.setColor(0.4f, 0.45f, 0.6f, 0.8f);
         for (int k = 0; k < track.count; k += 4) {
             int k2 = (k + 4) % track.count;
+            sr.line(px + (track.pos[k].x - track.minX) * scale, py + (track.maxZ - track.pos[k].z) * scale,
+                    px + (track.pos[k2].x - track.minX) * scale, py + (track.maxZ - track.pos[k2].z) * scale);
+        }
+        sr.setColor(0.3f, 1f, 0.55f, 1f);
+        for (int k = 0; k < track.count; k += 4) {
+            int k2 = (k + 4) % track.count;
+            if (!track.inPit(k * track.step) || !track.inPit(k2 * track.step)) continue;
             sr.line(px + (track.pos[k].x - track.minX) * scale, py + (track.maxZ - track.pos[k].z) * scale,
                     px + (track.pos[k2].x - track.minX) * scale, py + (track.maxZ - track.pos[k2].z) * scale);
         }

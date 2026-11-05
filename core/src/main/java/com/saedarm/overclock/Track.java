@@ -27,6 +27,7 @@ public class Track {
     public float[] curve;   // signed curvature, + = turning right
     public byte[] tunnel;   // 0 none, 1 octagon, 2 box
     public float minX, maxX, minZ, maxZ;
+    public float pitStart = -1, pitEnd = -1;   // recharge strip, metres from the start line
 
     private final Vector3 t1 = new Vector3(), t2 = new Vector3();
 
@@ -40,6 +41,8 @@ public class Track {
     public static Track load(FileHandle file) {
         String name = file.nameWithoutExtension();
         float width = 12f;
+        float scale = 1f;
+        float[] pit = null;
         Array<Vector3> cps = new Array<>();
         FloatArray rolls = new FloatArray();
         Array<String> tunnels = new Array<>();
@@ -48,12 +51,17 @@ public class Track {
             String line = raw.trim();
             if (line.startsWith("# ")) name = line.substring(2).trim();
             else if (line.startsWith("width:")) width = Float.parseFloat(line.substring(6).trim());
+            else if (line.startsWith("scale:")) scale = Float.parseFloat(line.substring(6).trim());
+            else if (line.startsWith("pit:")) {
+                String[] p = line.substring(4).trim().split("\\s+");
+                pit = new float[]{Float.parseFloat(p[0]), Float.parseFloat(p[1])};
+            }
             else if (line.startsWith("|")) {
                 String[] c = line.substring(1).split("\\|");
                 if (c.length < 5) continue;
                 String first = c[0].trim();
                 if (first.isEmpty() || first.startsWith("-") && first.contains("--") || Character.isLetter(first.charAt(0))) continue;
-                cps.add(new Vector3(f(c[0]), f(c[1]), f(c[2])));
+                cps.add(new Vector3(f(c[0]), f(c[1]), f(c[2])).scl(scale));
                 rolls.add(f(c[3]));
                 tunnels.add(c[4].trim());
             }
@@ -61,6 +69,7 @@ public class Track {
         if (cps.size < 4) throw new IllegalArgumentException(file + ": need at least 4 control points");
         Track t = new Track(name, width);
         t.build(cps, rolls, tunnels);
+        if (pit != null) { t.pitStart = pit[0]; t.pitEnd = pit[1]; }
         return t;
     }
 
@@ -169,6 +178,12 @@ public class Track {
     }
 
     public float curvatureAt(float s) { return curve[index(s)]; }
+
+    public boolean inPit(float s) {
+        if (pitStart < 0) return false;
+        s = wrap(s);
+        return s >= pitStart && s <= pitEnd;
+    }
 
     public int tunnelAt(float s) { return tunnel[index(s)]; }
 

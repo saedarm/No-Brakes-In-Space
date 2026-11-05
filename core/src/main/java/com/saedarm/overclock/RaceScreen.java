@@ -29,6 +29,8 @@ public class RaceScreen extends ScreenAdapter {
     private final Vector3 p = new Vector3(), f = new Vector3(), u = new Vector3(), r = new Vector3();
     private final Vector3 camUp = new Vector3(0, 1, 0), target = new Vector3();
     private boolean camInit;
+    private final Vector3 camBase = new Vector3();
+    private float shake;
 
     public RaceScreen(OverclockGame game, int trackIndex) {
         this.game = game;
@@ -83,6 +85,9 @@ public class RaceScreen extends ScreenAdapter {
             rank();
         }
 
+        if (player.burst > 0) shake = Math.max(shake, player.burst == 2 ? 1f : 0.55f);
+        if (player.scraping && player.speed > 30f) shake = Math.max(shake, 0.12f);
+        renderer.update(dt, racers);   // spawns debris and clears burst flags
         updateCamera(dt);
         Gdx.gl.glClearColor(0.02f, 0.02f, 0.04f, 1f);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
@@ -125,8 +130,13 @@ public class RaceScreen extends ScreenAdapter {
         p.mulAdd(r, player.lat).mulAdd(u, Racer.HOVER);
         target.set(p).mulAdd(f, -7.5f).mulAdd(u, 2.6f);
 
-        if (!camInit) { cam.position.set(target); camUp.set(u); camInit = true; }
-        cam.position.lerp(target, 1f - (float) Math.exp(-14f * dt));
+        if (!camInit) { camBase.set(target); camUp.set(u); camInit = true; }
+        camBase.lerp(target, 1f - (float) Math.exp(-14f * dt));
+        shake = Math.max(0, shake - 1.8f * dt);
+        float amp = shake * shake * 0.9f;
+        cam.position.set(camBase)
+                .mulAdd(r, MathUtils.random(-amp, amp))
+                .mulAdd(u, MathUtils.random(-amp, amp));
         camUp.lerp(u, 1f - (float) Math.exp(-8f * dt)).nor();
 
         Vector3 look = new Vector3(p).mulAdd(f, 12f);

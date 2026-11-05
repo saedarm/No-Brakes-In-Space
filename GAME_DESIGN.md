@@ -27,7 +27,12 @@ Only Sam moves things to [E].
 - [V] Items: MISSILE (homes on the racer ahead), MINES (three dropped behind),
   SHIELD (4 s immunity), TURBO.
 - [V] Energy 100. Missile 35, mine 25. At 0 you're down for 2.5 s, back at 60.
-- [?] Energy recharge — pit lane strip like Wipeout, or absorb pickups for energy?
+- [V] Energy recharge: a green recharge strip on the left third of the start straight,
+  +30 energy/s while you're on it. AI heads for it when below 55 energy.
+- [?] Also let you spend a held pickup on energy instead of firing it?
+- [V] Hit feedback: debris burst (bigger on a knockout), shockwave ring on the track,
+  ship flashes red, red screen flash, camera shake. Wall scrapes throw sparks and a
+  small shake.
 - [?] More weapons: EMP (drains boost of everyone near), rear-firing missile, plasma.
 - [?] Elimination mode (last ship running wins) as a second mode.
 
@@ -40,9 +45,11 @@ Only Sam moves things to [E].
 
 ## Tracks
 
-- [E] Tracks are Markdown tables in `assets/tracks/` (x, y, z, roll, tunnel).
-- [V] Ringbahn (loop + hairpin + tunnels), Korkenzieher (corkscrew + helix).
-- [?] Tracks are short (~10 s laps). Longer tracks, or more laps?
+- [E] Tracks are Markdown tables in `assets/tracks/` (x, y, z, roll, tunnel), with
+  `width:`, `scale:` (multiplies the points) and `pit: A B` (recharge strip, metres).
+- [V] Ringbahn (loop, hairpin, S-bend tunnel run; scale 2.5, ~35 s laps) and
+  Korkenzieher (corkscrew, helix; scale 2).
+- [?] Lap length feels right? 3 laps x ~35 s is about a 2-minute race.
 - [?] Track editor tool.
 
 ## Look and sound

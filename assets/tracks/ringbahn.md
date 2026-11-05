@@ -1,12 +1,17 @@
 # Ringbahn
 
-A practice oval with a vertical loop, a banked hairpin and an octagon tunnel.
+The practice course: a vertical loop, a banked hairpin, an S-bend tunnel run
+and a recharge strip on the start straight.
 
 width: 12
+scale: 2.5
+pit: 60 360
 
-Columns: `x y z` = control point (metres, y is up). `roll` = bank in degrees
-(positive = right edge down). `tunnel` applies from this point to the next:
-`-` none, `oct` octagon rings, `box` square rings.
+Columns: `x y z` = control point (y is up; multiplied by `scale` to get metres).
+`roll` = bank in degrees (positive = right edge down). `tunnel` applies from this
+point to the next: `-` none, `oct` octagon rings, `box` square rings.
+`pit: A B` = recharge strip from A to B metres after the start line (left third
+of the track).
 
 | x   | y  | z    | roll | tunnel |
 |-----|----|------|------|--------|
@@ -23,7 +28,9 @@ Columns: `x y z` = control point (metres, y is up). `roll` = bank in degrees
 | 50  | 0  | -410 | 30   | -      |
 | 95  | 0  | -370 | 30   | -      |
 | 110 | 0  | -280 | 10   | oct    |
-| 110 | 15 | -180 | 0    | oct    |
+| 102 | 8  | -232 | 20   | oct    |
+| 118 | 14 | -184 | -20  | -      |
+| 102 | 8  | -136 | 20   | -      |
 | 110 | 0  | -80  | 0    | -      |
 | 95  | 0  | 0    | 20   | -      |
 | 60  | 0  | 45   | 30   | -      |

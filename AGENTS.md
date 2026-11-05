@@ -30,6 +30,8 @@ Write decisions into `GAME_DESIGN.md`, not into chat.
   shield, turbo. Also in track space, so a hit is just "close in s and close in lat".
 - `NeonRenderer.java` — draws everything as lines with additive blending, twice
   (thick + faint, thin + bright) for a cheap glow. Static track lines are baked once.
+- Effects (debris, sparks, shockwave rings) live in `NeonRenderer.update()`. Racers
+  just raise flags (`burst`, `scraping`); the renderer spawns the effect and clears them.
 - `Hud.java` — speed (km/h), lap, place, weapon, energy and drift bars, minimap.
 - `RaceScreen.java` — input, update order, ranking, chase camera (camera "up" follows
   the track so loops roll the world).
@@ -39,6 +41,8 @@ Write decisions into `GAME_DESIGN.md`, not into chat.
 
 1. Copy `assets/tracks/ringbahn.md`, edit the table. Roll is degrees (+ = right edge
    down). Tunnel column applies until the next point: `-`, `oct`, `box`.
+   `scale:` multiplies every point (sketch small, blow it up). `pit: A B` puts the
+   recharge strip from A to B metres after the start line.
 2. Add the path to `OverclockGame.TRACKS`.
 3. Press **T** in game to cycle tracks.
 

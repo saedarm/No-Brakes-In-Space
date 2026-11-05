@@ -3,6 +3,8 @@
 A corkscrew straight inside a tunnel, a climbing helix, then a long dive home.
 
 width: 12
+scale: 2
+pit: 20 180
 
 | x   | y  | z    | roll | tunnel |
 |-----|----|------|------|--------|

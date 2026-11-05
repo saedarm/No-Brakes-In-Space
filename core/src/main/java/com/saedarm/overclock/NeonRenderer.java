@@ -31,6 +31,22 @@ public class NeonRenderer implements Disposable {
     private Camera cam;
     private float alphaScale;
 
+    /** A short glowing line segment flying through space (debris and sparks). */
+    private static class Bit {
+        final Vector3 p = new Vector3(), v = new Vector3(), d = new Vector3(), axis = new Vector3();
+        final Color c = new Color();
+        float life, max, spin;
+    }
+    /** Expanding shockwave ring lying on the track surface. */
+    private static class Ring {
+        float s, lat, life, max, radius;
+        final Color c = new Color();
+    }
+    private final Array<Bit> bits = new Array<>();
+    private final Array<Ring> rings = new Array<>();
+    private static final Color PIT = new Color(0.3f, 1f, 0.55f, 1f);
+    private static final Color HIT = new Color(1f, 0.15f, 0.2f, 1f);
+
     public NeonRenderer(Track track) {
         this.track = track;
         buildTrack();
@@ -59,6 +75,17 @@ public class NeonRenderer implements Disposable {
             }
             // tunnel rings
             if (track.tunnel[k] != 0 && k % 7 == 0) ring(k, track.tunnel[k], c);
+            // recharge strip: inner border + diagonal hatching on the left third
+            if (track.inPit(k * track.step)) {
+                float inner = -hw / 3f;
+                if (track.inPit(k2 * track.step)) edge(k, k2, inner, PIT, 0.9f);
+                if (k % 4 == 0) {
+                    int k3 = (k + 3) % n;
+                    a.set(track.pos[k]).mulAdd(track.right[k], -hw).mulAdd(track.up[k], 0.05f);
+                    b.set(track.pos[k3]).mulAdd(track.right[k3], inner).mulAdd(track.up[k3], 0.05f);
+                    add(a, b, PIT, 0.55f);
+                }
+            }
         }
     }
 
@@ -92,6 +119,69 @@ public class NeonRenderer implements Disposable {
 
     private void add(Vector3 v1, Vector3 v2, Color col, float alpha) {
         trackLines.addAll(v1.x, v1.y, v1.z, v2.x, v2.y, v2.z, col.r, col.g, col.b, alpha);
+    }
+
+    // ---------------------------------------------------------------- effects
+
+    /** Spawns debris for hits/knockouts and sparks for wall scrapes, then moves everything. */
+    public void update(float dt, Array<Racer> racers) {
+        for (Racer rc : racers) {
+            if (rc.burst > 0) {
+                shipPos(rc);
+                boolean ko = rc.burst == 2;
+                int n = ko ? 60 : 22;
+                for (int i = 0; i < n; i++) {
+                    Bit bt = new Bit();
+                    bt.p.set(p);
+                    bt.v.setToRandomDirection().scl(MathUtils.random(8f, ko ? 45f : 25f)).mulAdd(f, rc.speed * 0.55f);
+                    bt.d.setToRandomDirection().scl(MathUtils.random(0.3f, ko ? 1.6f : 0.9f));
+                    bt.axis.setToRandomDirection();
+                    bt.spin = MathUtils.random(-720f, 720f);
+                    bt.c.set(i % 3 == 0 ? Color.WHITE : (i % 3 == 1 ? HIT : rc.color));
+                    bt.life = bt.max = MathUtils.random(0.5f, ko ? 1.6f : 0.9f);
+                    bits.add(bt);
+                }
+                Ring rg = new Ring();
+                rg.s = rc.s; rg.lat = rc.lat;
+                rg.life = rg.max = ko ? 0.7f : 0.4f;
+                rg.radius = ko ? 16f : 7f;
+                rg.c.set(ko ? Color.WHITE : HIT);
+                rings.add(rg);
+                rc.burst = 0;
+            }
+            if (rc.scraping && rc.speed > 30f) {
+                shipPos(rc);
+                for (int i = 0; i < 2; i++) {
+                    Bit bt = new Bit();
+                    bt.p.set(p).mulAdd(r, Math.signum(rc.lat) * 1.5f);
+                    bt.v.set(f).scl(rc.speed * 0.7f).add(MathUtils.random(-6f, 6f), MathUtils.random(2f, 8f), MathUtils.random(-6f, 6f));
+                    bt.d.set(f).scl(-MathUtils.random(0.4f, 1.2f));
+                    bt.axis.set(u);
+                    bt.c.set(1f, 0.85f, 0.4f, 1f);
+                    bt.life = bt.max = MathUtils.random(0.15f, 0.35f);
+                    bits.add(bt);
+                }
+            }
+        }
+        for (int i = bits.size - 1; i >= 0; i--) {
+            Bit bt = bits.get(i);
+            bt.life -= dt;
+            if (bt.life <= 0) { bits.removeIndex(i); continue; }
+            bt.p.mulAdd(bt.v, dt);
+            bt.v.scl(1f - 1.5f * dt);
+            if (bt.spin != 0) bt.d.rotate(bt.axis, bt.spin * dt);
+        }
+        for (int i = rings.size - 1; i >= 0; i--) {
+            Ring rg = rings.get(i);
+            rg.life -= dt;
+            if (rg.life <= 0) rings.removeIndex(i);
+        }
+    }
+
+    /** Sets p/f/u/r to a racer's world position and track frame. */
+    private void shipPos(Racer rc) {
+        track.frame(rc.s, p, f, u, r);
+        p.mulAdd(r, rc.lat).mulAdd(u, Racer.HOVER);
     }
 
     // ---------------------------------------------------------------- frame
@@ -142,6 +232,26 @@ public class NeonRenderer implements Disposable {
             trail(m.s, m.lat, 0.9f, 10f, Weapon.MISSILE.color);
         }
         for (Racer rc : racers) ship(rc, time);
+
+        for (Bit bt : bits) {
+            float k = bt.life / bt.max;
+            a.set(bt.p);
+            b.set(bt.p).add(bt.d);
+            line(a, b, c.set(bt.c.r, bt.c.g, bt.c.b, k));
+        }
+        for (Ring rg : rings) {
+            float k = 1f - rg.life / rg.max;                 // 0 -> 1 as it expands
+            float rad = rg.radius * (0.2f + 0.8f * k);
+            track.frame(rg.s, p, f, u, r);
+            p.mulAdd(r, rg.lat).mulAdd(u, 0.3f);
+            Vector3 prev = new Vector3(), cur = new Vector3();
+            for (int i = 0; i <= 12; i++) {
+                float ang = i / 12f * MathUtils.PI2;
+                cur.set(p).mulAdd(r, MathUtils.cos(ang) * rad).mulAdd(f, MathUtils.sin(ang) * rad);
+                if (i > 0) line(prev, cur, c.set(rg.c.r, rg.c.g, rg.c.b, 1f - k));
+                prev.set(cur);
+            }
+        }
 
         sr.end();
     }
@@ -202,6 +312,8 @@ public class NeonRenderer implements Disposable {
             shipPts[i].set(p).mulAdd(r, SHIP[i][0]).mulAdd(u, SHIP[i][1]).mulAdd(f, SHIP[i][2]);
         }
         Color col = rc.color;
+        if (rc.hitFlash > 0 && (int) (time * 20) % 2 == 0) col = HIT;
+        else if (rc.inPit && rc.energy < 100f) col = c.set(rc.color).lerp(PIT, 0.5f + 0.5f * MathUtils.sin(time * 14f));
         for (int[] e : SHIP_EDGES) line(shipPts[e[0]], shipPts[e[1]], col);
 
         // engine flame, longer with turbo
