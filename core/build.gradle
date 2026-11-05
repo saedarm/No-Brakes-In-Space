@@ -1,3 +1,10 @@
 dependencies {
     api "com.badlogicgames.gdx:gdx:$gdxVersion"
 }
+
+// ./gradlew balance  ->  headless AI-vs-AI combat stats (see BalanceSim.java)
+tasks.register('balance', JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.saedarm.overclock.BalanceSim'
+    workingDir = rootProject.projectDir
+}

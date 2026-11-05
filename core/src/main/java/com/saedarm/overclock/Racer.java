@@ -73,8 +73,10 @@ public class Racer {
             steer *= 1.5f;
         } else if (drifting) {
             drifting = false;
-            if (boost >= 1f) turbo = Math.max(turbo, 2.2f);
-            else if (boost >= 0.5f) turbo = Math.max(turbo, 1.1f);
+            if (boost >= 0.5f) {
+                turbo = Math.max(turbo, boost >= 1f ? 2.2f : 1.1f);
+                if (isPlayer) Sfx.play(Sfx.TURBO, boost >= 1f ? 1f : 0.6f);
+            }
             boost = 0;
         }
         turbo = Math.max(0, turbo - dt);
@@ -101,7 +103,8 @@ public class Racer {
             lat = Math.signum(lat) * half;
             latVel *= -0.35f;
             speed *= 1f - 1.4f * dt;
-            if (shield <= 0) energy = Math.max(1f, energy - 8f * dt);   // scraping hurts but never kills
+            // scraping hurts but never kills, and never on the recharge strip
+            if (shield <= 0 && !track.inPit(s)) energy = Math.max(1f, energy - 8f * dt);
             scraping = true;
         }
 
@@ -129,15 +132,36 @@ public class Racer {
             respawn = 2.5f;
             burst = 2;
         }
+        Sfx.at(burst == 2 ? Sfx.KO : Sfx.HIT, s, 1f);
         return true;
     }
 
-    /** Simple AI: follow an inside line, brake for tight bends, push a bit harder when behind the player. */
-    public void updateAi(float dt, Track track, Racer player) {
+    /**
+     * AI driver: follows an inside line, brakes for tight bends, heads for the recharge
+     * strip when hurt, steers around mines it sees, and jukes side to side when a
+     * missile is locked on. awareness (0..1) scales how early it notices threats.
+     */
+    public void updateAi(float dt, Track track, Racer player, Combat combat) {
         float half = track.width / 2f - 1.2f;
         float c = track.curvatureAt(s + speed * 0.5f + 12f);
         float target = MathUtils.clamp(c * 160f, -1f, 1f) * half * 0.7f + line;
         if (energy < 55f && track.inPit(s + 40f)) target = -half * 0.75f;   // go recharge
+
+        if (combat != null) {
+            // mines: find the clear lane closest to where we wanted to go
+            float look = (speed * 0.9f + 15f) * awareness;
+            if (combat.mineAhead(this, look) != null) target = combat.clearLane(this, look, target, half);
+
+            // missile on our tail and no shield: hold the line, then one hard sidestep at the last moment
+            // (the missile follows our lane with a lag, so a late sharp move makes it miss)
+            Combat.Missile in = combat.incoming(this, 120f);
+            if (in != null && weapon != Weapon.SHIELD) {
+                float d = track.delta(s, in.s);
+                if (dodgeDir == 0) dodgeDir = lat > 0 ? -1f : 1f;           // toward the roomier side
+                if (d < 12f + 30f * awareness) target = MathUtils.clamp(lat + dodgeDir * 6f, -half, half);
+            } else dodgeDir = 0;
+        }
+        target = MathUtils.clamp(target, -half, half);
         float steer = MathUtils.clamp((target - lat) * 0.35f, -1f, 1f);
         boolean brake = Math.abs(c) > 0.045f && speed > MAX_SPEED * 0.7f;
 
@@ -149,4 +173,6 @@ public class Racer {
     }
 
     float baseSkill = 1f;
+    float awareness = 1f;
+    private float dodgeDir;
 }

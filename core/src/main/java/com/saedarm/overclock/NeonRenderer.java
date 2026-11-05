@@ -18,7 +18,8 @@ import com.badlogic.gdx.utils.FloatArray;
  * A real bloom shader is an open item in GAME_DESIGN.md.
  */
 public class NeonRenderer implements Disposable {
-    private static final float FOG = 650f;          // lines fade out with distance
+    public float fog = 650f;                       // lines fade out with distance
+    public Racer lockTarget;                       // who the player's missile would hit (bracketed in red)
 
     private final ShapeRenderer sr = new ShapeRenderer(20000);
     private final FloatArray trackLines = new FloatArray();   // x1 y1 z1 x2 y2 z2 r g b a
@@ -219,6 +220,14 @@ public class NeonRenderer implements Disposable {
             sr.line(t[i], t[i + 1], t[i + 2], t[i + 3], t[i + 4], t[i + 5]);
         }
 
+        if (combat != null) drawCombat(combat, time);
+        for (Racer rc : racers) ship(rc, time);
+        if (lockTarget != null && lockTarget.respawn <= 0) lockBrackets(lockTarget, time);
+        drawEffects();
+        sr.end();
+    }
+
+    private void drawCombat(Combat combat, float time) {
         for (Combat.Pickup pk : combat.pickups) {
             if (pk.cooldown > 0) continue;
             box(pk.s, pk.lat, 1.2f, 0.7f, time * 3f, c.set(1f, 0.3f, 1f, 1f));
@@ -231,8 +240,24 @@ public class NeonRenderer implements Disposable {
             box(m.s, m.lat, 0.9f, 0.35f, time * 20f, c.set(Weapon.MISSILE.color));
             trail(m.s, m.lat, 0.9f, 10f, Weapon.MISSILE.color);
         }
-        for (Racer rc : racers) ship(rc, time);
+    }
 
+    /** Four red corner brackets that tighten around the locked target. */
+    private void lockBrackets(Racer t, float time) {
+        shipPos(t);
+        float size = 3.2f + 0.6f * MathUtils.sin(time * 10f);
+        Color col = c.set(1f, 0.2f, 0.25f, 1f);
+        for (int i = 0; i < 4; i++) {
+            float sx = (i % 2 == 0) ? 1 : -1, sy = (i < 2) ? 1 : -1;
+            Vector3 corner = new Vector3(p).mulAdd(r, sx * size).mulAdd(u, 0.8f + sy * size * 0.6f);
+            a.set(corner).mulAdd(r, -sx * 1.2f);
+            line(corner, a, col);
+            a.set(corner).mulAdd(u, -sy * 1.0f);
+            line(corner, a, col);
+        }
+    }
+
+    private void drawEffects() {
         for (Bit bt : bits) {
             float k = bt.life / bt.max;
             a.set(bt.p);
@@ -252,13 +277,11 @@ public class NeonRenderer implements Disposable {
                 prev.set(cur);
             }
         }
-
-        sr.end();
     }
 
     private float fog(float x, float y, float z) {
         float d = cam.position.dst(x, y, z);
-        return MathUtils.clamp(1f - d / FOG, 0f, 1f);
+        return MathUtils.clamp(1f - d / fog, 0f, 1f);
     }
 
     private void line(Vector3 v1, Vector3 v2, Color col) {

@@ -14,12 +14,27 @@ public class OverclockGame extends Game {
     public void create() {
         // libGDX Arrays reuse one iterator by default; we nest loops over racers, so allow fresh ones.
         com.badlogic.gdx.utils.Collections.allocateIterators = true;
-        startRace(0);
+        Sfx.load();
+        showMenu(0);
+    }
+
+    public void showMenu(int selected) {
+        swap(new MenuScreen(this, selected));
     }
 
     public void startRace(int trackIndex) {
+        swap(new RaceScreen(this, trackIndex));
+    }
+
+    private void swap(Screen next) {
         Screen old = getScreen();
-        setScreen(new RaceScreen(this, trackIndex));
+        setScreen(next);
         if (old != null) old.dispose();
+    }
+
+    @Override
+    public void dispose() {
+        if (getScreen() != null) getScreen().dispose();
+        Sfx.dispose();
     }
 }

@@ -25,6 +25,8 @@ public class RaceScreen extends ScreenAdapter {
 
     private float countdown = 3f, raceTime, time;
     private boolean finished;
+    private int lastCount = 4;
+    private float lockBeep;
 
     private final Vector3 p = new Vector3(), f = new Vector3(), u = new Vector3(), r = new Vector3();
     private final Vector3 camUp = new Vector3(0, 1, 0), target = new Vector3();
@@ -41,9 +43,9 @@ public class RaceScreen extends ScreenAdapter {
 
         player = new Racer("YOU", new Color(0.35f, 1f, 0.45f, 1f), true);
         racers.add(player);
-        racers.add(ai("VOLT", new Color(1f, 0.3f, 0.9f, 1f), 0.97f));
-        racers.add(ai("EMBER", new Color(1f, 0.55f, 0.15f, 1f), 0.94f));
-        racers.add(ai("GLINT", new Color(0.3f, 0.8f, 1f, 1f), 0.91f));
+        racers.add(ai("VOLT", new Color(1f, 0.3f, 0.9f, 1f), 0.97f, 0.9f));
+        racers.add(ai("EMBER", new Color(1f, 0.55f, 0.15f, 1f), 0.94f, 0.7f));
+        racers.add(ai("GLINT", new Color(0.3f, 0.8f, 1f, 1f), 0.91f, 0.5f));
 
         // grid: two columns, just behind the start line (crossing it starts lap 1)
         for (int i = 0; i < racers.size; i++) {
@@ -56,9 +58,11 @@ public class RaceScreen extends ScreenAdapter {
         cam.far = 2000f;
     }
 
-    private Racer ai(String name, Color c, float skill) {
+    /** skill = top-speed factor, awareness = how early it spots mines and missiles (0..1). */
+    private Racer ai(String name, Color c, float skill, float awareness) {
         Racer a = new Racer(name, c, false);
         a.baseSkill = skill;
+        a.awareness = awareness;
         a.line = MathUtils.random(-1.5f, 1.5f);
         return a;
     }
@@ -70,15 +74,21 @@ public class RaceScreen extends ScreenAdapter {
         if (handleKeys()) return;   // screen was replaced; stop using this one
 
         countdown -= dt;
+        int count = (int) Math.ceil(countdown);
+        if (count != lastCount) {
+            if (count >= 1 && count <= 3) Sfx.play(Sfx.BEEP, 0.6f);
+            else if (count <= 0 && lastCount >= 1) Sfx.play(Sfx.GO, 0.7f);
+            lastCount = count;
+        }
         if (countdown <= 0) {
             if (!finished) raceTime += dt;
             float steer = (key(Keys.RIGHT, Keys.D) ? 1 : 0) - (key(Keys.LEFT, Keys.A) ? 1 : 0);
-            if (finished) player.updateAi(dt, track, player);   // autopilot after the flag
+            if (finished) player.updateAi(dt, track, player, combat);   // autopilot after the flag
             else player.update(dt, track, steer, key(Keys.UP, Keys.W), key(Keys.DOWN, Keys.S),
                     key(Keys.SHIFT_LEFT, Keys.SHIFT_RIGHT));
             for (Racer rc : racers) {
                 if (rc.isPlayer) continue;
-                rc.updateAi(dt, track, player);
+                rc.updateAi(dt, track, player, combat);
                 combat.aiUse(dt, rc, racers);
             }
             combat.update(dt, racers);
@@ -88,6 +98,21 @@ public class RaceScreen extends ScreenAdapter {
         if (player.burst > 0) shake = Math.max(shake, player.burst == 2 ? 1f : 0.55f);
         if (player.scraping && player.speed > 30f) shake = Math.max(shake, 0.12f);
         renderer.update(dt, racers);   // spawns debris and clears burst flags
+        Sfx.update(dt, player);
+
+        // lock-on: warning for missiles chasing us, brackets on whoever our missile would hit
+        Combat.Missile threat = combat.incoming(player, Combat.MISSILE_RANGE);
+        hud.incoming = threat == null ? -1 : track.delta(player.s, threat.s);
+        if (threat != null && !finished) {
+            lockBeep -= dt;
+            if (lockBeep <= 0) {
+                Sfx.play(Sfx.LOCK, 0.6f);
+                lockBeep = MathUtils.clamp(hud.incoming / 250f, 0.07f, 0.45f);
+            }
+        } else lockBeep = 0;
+        Racer mine = player.weapon == Weapon.MISSILE && !finished ? combat.lockTarget(player, racers) : null;
+        hud.myLock = mine;
+        renderer.lockTarget = mine;
         updateCamera(dt);
         Gdx.gl.glClearColor(0.02f, 0.02f, 0.04f, 1f);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
@@ -97,7 +122,11 @@ public class RaceScreen extends ScreenAdapter {
 
     private boolean handleKeys() {
         if (Gdx.input.isKeyJustPressed(Keys.SPACE) && countdown <= 0 && !finished) combat.fire(player, racers);
-        if (Gdx.input.isKeyJustPressed(Keys.ESCAPE)) Gdx.app.exit();
+        // debug keys for play-testing combat
+        if (Gdx.input.isKeyJustPressed(Keys.F1)) player.weapon = Weapon.MISSILE;
+        if (Gdx.input.isKeyJustPressed(Keys.F2) && countdown <= 0) combat.debugMissileAt(player, racers.get(1), 150f);
+        if (Gdx.input.isKeyJustPressed(Keys.ESCAPE)
+                || (finished && Gdx.input.isKeyJustPressed(Keys.ENTER))) { game.showMenu(trackIndex); return true; }
         if (Gdx.input.isKeyJustPressed(Keys.R)) { game.startRace(trackIndex); return true; }
         if (Gdx.input.isKeyJustPressed(Keys.T)) { game.startRace((trackIndex + 1) % OverclockGame.TRACKS.length); return true; }
         return false;
@@ -153,6 +182,16 @@ public class RaceScreen extends ScreenAdapter {
         cam.viewportHeight = height;
         cam.update();
         hud.resize(width, height);
+    }
+
+    @Override
+    public void show() {
+        Sfx.startRace(track, player);
+    }
+
+    @Override
+    public void hide() {
+        Sfx.stopLoops();
     }
 
     @Override

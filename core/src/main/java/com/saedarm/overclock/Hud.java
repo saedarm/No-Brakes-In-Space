@@ -23,6 +23,10 @@ public class Hud implements Disposable {
     private final GlyphLayout layout = new GlyphLayout();
     private final Matrix4 ortho = new Matrix4();
     private float w, h;
+    /** Set by RaceScreen each frame: distance of a missile locked on the player (-1 = none). */
+    public float incoming = -1;
+    /** Set by RaceScreen each frame: who the player's missile would lock on to. */
+    public Racer myLock;
 
     public Hud() {
         font.getRegion().getTexture().setFilter(com.badlogic.gdx.graphics.Texture.TextureFilter.Linear,
@@ -50,6 +54,11 @@ public class Hud implements Disposable {
         sr.end();
 
         sr.begin(ShapeType.Filled);
+        if (incoming >= 0 && player.respawn <= 0) {          // red edge glow while locked
+            float k = 0.25f + 0.25f * (float) Math.abs(Math.sin(raceTime * 10f));
+            sr.setColor(1f, 0.1f, 0.15f, k);
+            sr.rect(0, 0, w, 6); sr.rect(0, h - 6, w, 6); sr.rect(0, 0, 6, h); sr.rect(w - 6, 0, 6, h);
+        }
         if (player.hitFlash > 0) {
             sr.setColor(1f, 0.1f, 0.15f, player.hitFlash * 0.45f);
             sr.rect(0, 0, w, h);
@@ -70,6 +79,16 @@ public class Hud implements Disposable {
         text("ENERGY", 260, 42, 1f, DIM, false);
         text("DRIFT", 260, 60, 1f, DIM, false);
         if (player.weapon != null) text("[ " + player.weapon.label + " ]  SPACE", 30, 100, 1.4f, player.weapon.color, false);
+        if (player.weapon == Weapon.MISSILE)
+            text(myLock != null ? "LOCKED: " + myLock.name : "NO TARGET IN RANGE", 30, 124, 1.1f,
+                    myLock != null ? Weapon.MISSILE.color : DIM, false);
+        if (incoming >= 0 && player.respawn <= 0) {
+            boolean on = (int) (raceTime * (incoming < 80 ? 14 : 6)) % 2 == 0;
+            String hint = player.weapon == Weapon.SHIELD ? "SPACE = SHIELD" : "JUKE LEFT / RIGHT";
+            text("!! MISSILE LOCK  " + Math.round(incoming) + " m !!", cx, h / 2f - 120, 2f,
+                    on ? Weapon.MINE.color : Color.WHITE, true);
+            text(hint, cx, h / 2f - 150, 1.2f, Weapon.MISSILE.color, true);
+        }
         if (player.inPit && player.energy < 100f) text("RECHARGING", cx, 150, 1.6f, new Color(0.3f, 1f, 0.55f, 1f), true);
         else if (low) text("LOW ENERGY  -  RECHARGE STRIP ON THE START STRAIGHT", cx, 150, 1.1f, Weapon.MINE.color, true);
         if (player.respawn > 0) text("SYSTEMS DOWN", cx, h / 2f + 80, 2.4f, Weapon.MINE.color, true);
@@ -83,10 +102,10 @@ public class Hud implements Disposable {
                 text(place(r.place) + "   " + r.name + "   " + t, cx, y, 1.4f, r.color, true);
                 y -= 28;
             }
-            text("R  restart      T  next track", cx, y - 20, 1.2f, DIM, true);
+            text("ENTER  menu      R  restart      T  next track", cx, y - 20, 1.2f, DIM, true);
         }
         text(track.name.toUpperCase(), w - 30 - 200, h - 230, 1.1f, DIM, false);
-        text("ARROWS steer/throttle   SHIFT drift   SPACE fire   T track   R restart", cx, h - 12, 0.9f, DIM, true);
+        text("ARROWS steer/throttle   SHIFT drift   SPACE fire   R restart   ESC menu", cx, h - 12, 0.9f, DIM, true);
         batch.end();
     }
 
