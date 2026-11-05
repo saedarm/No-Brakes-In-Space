@@ -8,6 +8,10 @@ public class NoBrakesGame extends Game {
     public static final String[] TRACKS = {
             "tracks/ringbahn.md",
             "tracks/korkenzieher.md",
+            "tracks/pretzel.md",
+            "tracks/spin-cycle.md",
+            "tracks/toilet-bowl.md",
+            "tracks/i-75.md",
     };
 
     @Override
@@ -24,6 +28,8 @@ public class NoBrakesGame extends Game {
 
     /** The player's alien, picked on the menu. */
     public Alien pilot = Alien.BLIP;
+    /** Speed class, picked on the menu. 150 DM is the original tuning. */
+    public Engine engine = Engine.DM150;
 
     public void showPodium(com.badlogic.gdx.utils.Array<Racer> racers, int trackIndex) {
         swap(new PodiumScreen(this, racers, trackIndex));

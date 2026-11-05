@@ -35,7 +35,7 @@ public class Combat {
         }
         return Weapon.TURBO;
     }
-    public static int missileHits, mineHits, missilesFired, crashes;   // stats (used by balance tests)
+    public static int missileHits, mineHits, missilesFired, crashes, pylonHits;   // stats (used by balance tests)
     public static final float CRASH_DAMAGE = 20f, PYLON_DAMAGE = 10f;
     public static final float SLIDER_PERIOD = 3.5f;
 
@@ -75,14 +75,16 @@ public class Combat {
             float row = ((s - 150f) % 320f + 320f) % 320f;          // distance past the last pickup row
             if (row < 30f || row > 290f) continue;
             boolean near = false;
-            for (Obstacle o : obstacles) if (Math.abs(track.delta(o.s, s)) < 70f) { near = true; break; }
+            for (Obstacle o : obstacles) if (Math.abs(track.delta(o.s, s)) < 140f) { near = true; break; }
             if (near) continue;
 
             float roll = rnd.nextFloat();
             ObstacleType type = roll < 0.45f ? ObstacleType.BLOCK : roll < 0.7f ? ObstacleType.SLIDER : ObstacleType.PYLON;
             if (type == ObstacleType.PYLON) {
-                // a little slalom: three posts across the track with gaps
-                for (int i = -1; i <= 1; i++) add(type, s + i * 12f, i * half * 0.55f + (rnd.nextFloat() - 0.5f) * 2f, 0);
+                // slalom: three posts 35 m apart, alternating either side of the centre line.
+                // Weave through them, or hug a wall and skip the whole thing.
+                float side = rnd.nextBoolean() ? 1f : -1f;
+                for (int i = 0; i < 3; i++) add(type, s + i * 35f, side * (i % 2 == 0 ? 1f : -1f) * half * 0.3f, 0);
             } else {
                 float lat = (rnd.nextFloat() * 2f - 1f) * (half - type.width / 2f - 1f);
                 add(type, s, lat, rnd.nextFloat() * MathUtils.PI2);
@@ -108,7 +110,15 @@ public class Combat {
                 float ds = track.delta(r.s, o.s);
                 if (Math.abs(ds) > o.type.depth / 2f + 1.6f || Math.abs(r.lat - o.lat) > o.type.width / 2f + 1.3f) continue;
                 if (o.type == ObstacleType.PYLON) {
-                    if (r.hit(PYLON_DAMAGE)) r.ghost = 0.6f;
+                    if (r.hit(PYLON_DAMAGE)) {
+                        // knock the ship off the post so it can't get hit again while spinning on top of it
+                        float side = r.lat >= o.lat ? 1f : -1f;
+                        if (Math.abs(o.lat + side * (o.type.width / 2f + 1.8f)) > half - 0.9f) side = -side;
+                        r.lat = o.lat + side * (o.type.width / 2f + 1.8f);
+                        r.latVel = side * 8f;
+                        r.ghost = 0.8f;
+                        pylonHits++;
+                    }
                 } else if (r.crash(CRASH_DAMAGE)) {
                     crashes++;
                     float back = o.type.depth / 2f + 3f + ds;   // put the ship just in front of the block
@@ -285,34 +295,46 @@ public class Combat {
     }
 
     /**
-     * Lane (lat) closest to `want` that clears the next row of hazards. Only hazards within
-     * ~20 m of the nearest one count, so a pylon slalom is taken one post at a time, and
-     * sliders are judged by where they'll be when we arrive.
+     * Lane (lat) closest to `want` that clears the next group of hazards: everything within
+     * 75 m of the nearest one (a whole pylon slalom, or a fan of mines). Sliders are judged
+     * by where they'll be when we arrive.
      */
     public float clearLane(Racer r, float range, float want, float half) {
         float near = nearestHazard(r, range);
         if (near < 0) return want;
-        float lo = near - 1f, hi = near + 20f;
+        float lo = near - 1f, hi = near + 75f;
         float best = want, bestCost = Float.MAX_VALUE;
         for (float lane = -half; lane <= half + 0.01f; lane += 0.5f) {
             boolean clear = true;
             for (Mine m : mines) {
                 if (m.owner == r && m.arm > 0) continue;
                 float d = track.delta(m.s, r.s);
-                if (d > lo && d < hi && Math.abs(m.lat - lane) < 2.4f) { clear = false; break; }
+                if (d > lo && d < hi && (Math.abs(m.lat - lane) < 2.4f || mustCross(r, m.lat, 2.4f, lane, d))) { clear = false; break; }
             }
             for (Obstacle o : obstacles) {
                 if (!clear) break;
                 float d = track.delta(o.s, r.s);
                 if (d <= lo || d >= hi) continue;
                 float lat = latAt(o, d / Math.max(20f, r.speed));
-                if (Math.abs(lat - lane) < o.type.width / 2f + 2.2f) clear = false;
+                float margin = o.type.width / 2f + 2.2f;
+                if (Math.abs(lat - lane) < margin || mustCross(r, lat, margin, lane, d)) clear = false;
             }
             if (!clear) continue;
             float cost = Math.abs(lane - want) + 0.5f * Math.abs(lane - r.lat);
             if (cost < bestCost) { bestCost = cost; best = lane; }
         }
         return best;
+    }
+
+    /**
+     * True if getting to `lane` means crossing in front of a hazard at `hazLat` that's
+     * `d` metres ahead, and there isn't enough time to get across before reaching it.
+     */
+    private static boolean mustCross(Racer r, float hazLat, float margin, float lane, float d) {
+        if (Math.signum(lane - hazLat) == Math.signum(r.lat - hazLat)) return false;   // same side: no crossing
+        float need = Math.abs(r.lat - hazLat) + margin;
+        float can = Racer.STEER_SPEED * 0.8f * d / Math.max(20f, r.speed);
+        return need > can;
     }
 
     /** Closest missile locked on r and within range metres behind it. */

@@ -282,7 +282,7 @@ public class PodiumScreen extends ScreenAdapter {
         batch.setProjectionMatrix(ortho);
         batch.begin();
         text("AWARD CEREMONY", w / 2f, h - 30, 2.6f, GOLD, true);
-        text(trackName + "  CUP", w / 2f, h - 78, 1.2f, DIM, true);
+        text(trackName + "  CUP   /   " + game.engine.label, w / 2f, h - 78, 1.2f, DIM, true);
         text(caption, w / 2f, h - 110, 1.4f, Color.WHITE, true);
 
         // place numbers + names under each podium (projected from 3D)

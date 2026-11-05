@@ -40,11 +40,15 @@ Write decisions into `GAME_DESIGN.md`, not into chat.
 - `Hud.java` — speed (km/h), lap, place, weapon, energy and drift bars, minimap.
 - `RaceScreen.java` — input, update order, ranking, chase camera (camera "up" follows
   the track so loops roll the world).
+- `Engine.java` — dark-matter speed classes (50/100/150/200 DM). `Racer.engine` holds the
+  multiplier; use `racer.topSpeed()` rather than `MAX_SPEED` for anything speed-relative.
 - `MenuScreen.java` — title + track select with an orbiting preview (reuses NeonRenderer).
 - `Sfx.java` — static sound helper. `Sfx.at(name, s, vol)` fades by track distance from
   the player. WAVs come from `tools/make_sfx.py` (edit a recipe, re-run it).
-- `BalanceSim.java` — headless AI-vs-AI races; `./gradlew balance` prints combat stats.
-  Run it after touching weapon or AI numbers.
+- `BalanceSim.java` — headless AI-vs-AI races on every track; `./gradlew balance` (or
+  `-Pengine=DM200`) prints per-track length, tightest corner, AI lap time, missile hit rate,
+  mine hits, crashes, pylon hits, knockouts. Run it after touching tracks, weapons, AI or
+  speeds. A tightest corner of a few metres means the track has a kink.
 - `NoBrakesGame.java` — the track list and screen switching. `Lwjgl3Launcher` — window config.
 
 ## Debug keys (in a race)
@@ -58,8 +62,10 @@ Write decisions into `GAME_DESIGN.md`, not into chat.
    down). Tunnel column applies until the next point: `-`, `oct`, `box`.
    `scale:` multiplies every point (sketch small, blow it up). `pit: A B` puts the
    recharge strip from A to B metres after the start line. `obstacles: N` scatters N
-   obstacle spots (seeded by file name, so the same every race).
-2. Add the path to `NoBrakesGame.TRACKS`.
+   obstacle spots (seeded by file name, so the same every race). `tagline:` shows on
+   the menu. Music: drop `assets/music/<file name>.ogg` (or add it to make_music.py).
+   The spline is centripetal Catmull-Rom, so uneven point spacing is fine.
+2. Add the path to `NoBrakesGame.TRACKS`, then run `./gradlew balance` to check it.
 3. It shows up in the menu automatically; **T** in a race also cycles tracks.
 
 ## Gotchas

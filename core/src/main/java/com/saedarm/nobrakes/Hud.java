@@ -28,6 +28,8 @@ public class Hud implements Disposable {
     public float incoming = -1;
     /** Set by RaceScreen each frame: who the player's missile would lock on to. */
     public Racer myLock;
+    /** Engine class label shown next to the speedometer (set by RaceScreen). */
+    public String engineLabel = "";
 
     public Hud() {
         font.getRegion().getTexture().setFilter(com.badlogic.gdx.graphics.Texture.TextureFilter.Linear,
@@ -84,6 +86,7 @@ public class Hud implements Disposable {
         batch.begin();
         text(String.valueOf(Math.round(player.speed * 3.6f)), cx, 100, 3.6f, Color.WHITE, true);
         text(time(raceTime), cx, 46, 1.2f, DIM, true);
+        text(engineLabel, cx + 132, 40, 1.1f, Weapon.TURBO.color, false);
         text("LAP " + Math.max(1, Math.min(laps, player.lap)) + "/" + laps, 30, h - 24, 1.6f, Color.WHITE, false);
         text(place(player.place) + " / " + racers.size, 30, h - 54, 2.2f, CYAN, false);
         text("ENERGY", 260, 42, 1f, DIM, false);

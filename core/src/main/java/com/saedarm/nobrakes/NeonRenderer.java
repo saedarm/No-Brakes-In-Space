@@ -414,7 +414,7 @@ public class NeonRenderer implements Disposable {
         for (int[] e : SHIP_EDGES) line(shipPts[e[0]], shipPts[e[1]], col);
 
         // engine flame, longer with turbo
-        float flame = rc.turbo > 0 ? 4f : 1f + rc.speed / Racer.MAX_SPEED;
+        float flame = rc.turbo > 0 ? 4f : 1f + rc.speed / rc.topSpeed();
         a.set(shipPts[4]);
         b.set(shipPts[4]).mulAdd(f, -flame);
         line(a, b, rc.turbo > 0 ? Weapon.TURBO.color : c.set(col.r, col.g, col.b, 0.6f));

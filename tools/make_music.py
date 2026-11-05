@@ -19,6 +19,14 @@ SONGS = {
                      chords=[[45, 57, 60, 64, 67], [41, 57, 60, 64, 65], [36, 55, 59, 64, 67], [43, 55, 59, 62, 64]]),
     "korkenzieher": dict(bpm=124, bars_per_chord=2, seed=3, kick="four", hats=1.0,
                          chords=[[38, 57, 60, 64, 65], [34, 53, 57, 62, 65], [43, 55, 58, 62, 65], [45, 55, 57, 61, 64]]),
+    "pretzel": dict(bpm=118, bars_per_chord=2, seed=4, kick="four", hats=1.0,
+                    chords=[[40, 55, 59, 62, 66], [36, 52, 55, 59, 62], [38, 54, 57, 62, 66], [43, 55, 59, 62, 67]]),
+    "spin-cycle": dict(bpm=128, bars_per_chord=2, seed=5, kick="four", hats=1.0,
+                       chords=[[42, 57, 61, 64, 69], [38, 57, 61, 64, 66], [45, 57, 61, 64, 68], [40, 56, 59, 64, 66]]),
+    "toilet-bowl": dict(bpm=96, bars_per_chord=2, seed=6, kick="lofi", hats=0.5,
+                        chords=[[34, 53, 57, 60, 62], [43, 58, 62, 65, 69], [39, 55, 58, 62, 63], [41, 57, 60, 65, 67]]),
+    "i-75": dict(bpm=104, bars_per_chord=2, seed=7, kick="lofi", hats=1.0,
+                 chords=[[38, 57, 60, 64, 65], [43, 59, 62, 64, 65], [36, 55, 59, 62, 64], [45, 55, 58, 61, 64]]),
 }
 
 

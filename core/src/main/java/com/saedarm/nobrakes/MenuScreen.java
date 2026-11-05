@@ -60,6 +60,8 @@ public class MenuScreen extends ScreenAdapter {
         }
         if (Gdx.input.isKeyJustPressed(Keys.ESCAPE)) { Gdx.app.exit(); return; }
         if (Gdx.input.isKeyJustPressed(Keys.M)) Sfx.toggleMusic();
+        if (Gdx.input.isKeyJustPressed(Keys.E)) { game.engine = game.engine.next(); Sfx.play(Sfx.TURBO, 0.35f); }
+        if (Gdx.input.isKeyJustPressed(Keys.Q)) { game.engine = game.engine.prev(); Sfx.play(Sfx.TURBO, 0.35f); }
         int na = Alien.values().length;
         if (Gdx.input.isKeyJustPressed(Keys.LEFT) || Gdx.input.isKeyJustPressed(Keys.A)) {
             game.pilot = Alien.values()[(game.pilot.ordinal() - 1 + na) % na]; Sfx.play(Sfx.PICKUP, 0.4f);
@@ -102,21 +104,29 @@ public class MenuScreen extends ScreenAdapter {
         text("NO BRAKES IN SPACE", 60, h - 60, 4.2f, CYAN);
         text("A MARTIAN DEMOLITION PRIX", 64, h - 128, 1.2f, DIM);
 
-        float y = h / 2f + 60;
+        float y = h - 190;
         for (int i = 0; i < n; i++) {
             ensureLoaded(i);
             boolean sel = i == selected;
-            text((sel ? "> " : "   ") + tracks[i].name.toUpperCase(), 60, y, sel ? 2.2f : 1.6f, sel ? Color.WHITE : DIM);
-            y -= sel ? 46 : 36;
+            text((sel ? "> " : "   ") + tracks[i].name.toUpperCase(), 60, y, sel ? 2.0f : 1.4f, sel ? Color.WHITE : DIM);
+            y -= sel ? 40 : 30;
         }
-        text(String.format("%.1f KM   %d LAPS   4 RACERS", t.length / 1000f, RaceScreen.LAPS), 64, y - 20, 1.2f, CYAN);
+        text(t.tagline, 64, y - 12, 1.15f, Color.WHITE);
+        text(String.format("%.1f KM   %d LAPS   4 RACERS", t.length / 1000f, RaceScreen.LAPS), 64, y - 42, 1.1f, CYAN);
+
+        // engine class
+        Engine e = game.engine;
+        Color ec = e == Engine.DM200 ? (((int) (time * 6) % 2 == 0) ? Weapon.MINE.color : Color.WHITE) : Weapon.TURBO.color;
+        text("ENGINE", 64, 200, 1.1f, DIM);
+        text("<  " + e.label + "  >", 64, 172, 2f, ec);
+        text(e.tagline, 64, 138, 1.1f, Color.WHITE);
 
         text("PILOT", w - 420, 130, 1.1f, DIM);
         text("<  " + al.name + "  >", w - 420, 100, 2f, al.color);
         text(al.tagline, w - 420, 66, 1.1f, Color.WHITE);
 
-        if ((int) (time * 2) % 2 == 0) text("PRESS ENTER", 60, 110, 1.6f, Color.WHITE);
-        text("UP/DOWN  track     LEFT/RIGHT  pilot     ENTER  race     M  music " + (Sfx.musicOn ? "ON" : "OFF") + "     ESC  quit",
+        if ((int) (time * 2) % 2 == 0) text("PRESS ENTER", 60, 82, 1.6f, Color.WHITE);
+        text("UP/DOWN  track     LEFT/RIGHT  pilot     Q/E  engine     ENTER  race     M  music " + (Sfx.musicOn ? "ON" : "OFF") + "     ESC  quit",
                 60, 30, 1.1f, DIM);
         batch.end();
     }

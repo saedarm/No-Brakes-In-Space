@@ -94,7 +94,7 @@ public final class Sfx {
     /** Called every frame: engine pitch follows speed, recharge hum fades in on the strip. */
     public static void update(float dt, Racer p) {
         Sound e = sounds.get("engine"), r = sounds.get("recharge");
-        float k = Math.min(1.6f, p.speed / Racer.MAX_SPEED);
+        float k = Math.min(1.6f, p.speed / Racer.MAX_SPEED);   // absolute, so 200 DM really screams
         if (e != null && engineId != -1) {
             float pitch = 0.55f + 0.9f * k + (p.turbo > 0 ? 0.25f : 0f);
             e.setPitch(engineId, MathUtils.clamp(pitch, 0.5f, 2f));

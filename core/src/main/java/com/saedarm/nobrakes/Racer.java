@@ -44,6 +44,10 @@ public class Racer {
     public float overcook;          // seconds a full drift has been held
     public boolean spunOut;         // set on the frame a spin-out starts (HUD/sfx)
     public Alien alien = Alien.BLIP;
+    public float engine = 1f;       // dark matter class multiplier (Engine.mult)
+
+    /** This racer's top speed before skill and turbo. */
+    public float topSpeed() { return MAX_SPEED * engine; }
     public Weapon weapon;
     public boolean finished;
     public float finishTime;
@@ -146,9 +150,10 @@ public class Racer {
         turbo = Math.max(0, turbo - dt);
 
         // --- speed
-        float top = MAX_SPEED * skill * (turbo > 0 ? TURBO_MULT : 1f);
-        if (turbo > 0) speed += ACCEL * 2.2f * dt;
-        else if (throttle) speed += ACCEL * (1f - 0.6f * speed / top) * dt;
+        float top = MAX_SPEED * engine * skill * (turbo > 0 ? TURBO_MULT : 1f);
+        float accel = ACCEL * engine;
+        if (turbo > 0) speed += accel * 2.2f * dt;
+        else if (throttle) speed += accel * (1f - 0.6f * speed / top) * dt;
         else speed -= COAST * dt;
         if (brake) speed -= BRAKE * dt;
         if (drifting) speed -= 6f * dt;
@@ -156,8 +161,9 @@ public class Racer {
         speed = Math.max(0, speed);
 
         // --- steering, plus corners pushing you to the outside
-        float speedFactor = 0.55f + 0.45f * Math.min(1f, speed / MAX_SPEED);
-        latVel = MathUtils.lerp(latVel, steer * STEER_SPEED * speedFactor, Math.min(1f, 9f * dt));
+        float speedFactor = 0.55f + 0.45f * Math.min(1f, speed / topSpeed());
+        float steerSpeed = STEER_SPEED * (0.75f + 0.25f * engine);      // faster classes steer a bit quicker
+        latVel = MathUtils.lerp(latVel, steer * steerSpeed * speedFactor, Math.min(1f, 9f * dt));
         latVel -= track.curvatureAt(s) * speed * speed * CENTRIFUGE * dt;
         lat += latVel * dt;
 
@@ -213,10 +219,15 @@ public class Racer {
         float target = MathUtils.clamp(c * 160f, -1f, 1f) * half * 0.7f + line;
         if (energy < 55f && track.inPit(s + 40f)) target = -half * 0.75f;   // go recharge
 
-        if (combat != null) {
+        // every now and then a rival zones out for a moment (sloppier aliens more often)
+        zoneOut -= dt;
+        if (zoneOut <= 0 && MathUtils.random() < dt * (1f - awareness) * ZONE_OUT_RATE) zoneOut = MathUtils.random(0.5f, 1f);
+
+        if (combat != null && zoneOut <= 0) {
             // mines: find the clear lane closest to where we wanted to go
             float look = (speed * 0.9f + 15f) * awareness;
-            if (combat.hazardAhead(this, look)) target = combat.clearLane(this, look, target, half);
+            // always steer for a lane that's clear of the next group of hazards (returns `target` if it already is)
+            target = combat.clearLane(this, look, target, half);
 
             // missile on our tail and no shield: hold the line, then one hard sidestep at the last moment
             // (the missile follows our lane with a lag, so a late sharp move makes it miss)
@@ -229,7 +240,7 @@ public class Racer {
         }
         target = MathUtils.clamp(target, -half, half);
         float steer = MathUtils.clamp((target - lat) * 0.35f, -1f, 1f);
-        boolean brake = Math.abs(c) > 0.045f && speed > MAX_SPEED * 0.7f;
+        boolean brake = Math.abs(c) > 0.045f && speed > topSpeed() * 0.7f;
 
         // rubber band [V]
         float gap = player.distance - distance;
@@ -240,5 +251,7 @@ public class Racer {
 
     float baseSkill = 1f;
     float awareness = 1f;
-    private float dodgeDir;
+    private float dodgeDir, zoneOut;
+    /** How often rivals zone out and miss a hazard: per second, times (1 - awareness). */
+    public static final float ZONE_OUT_RATE = 0.22f;
 }

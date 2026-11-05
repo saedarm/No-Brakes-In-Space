@@ -26,9 +26,10 @@ Runnable jar: `./gradlew lwjgl3:jar` → `lwjgl3/build/libs/NoBrakesInSpace.jar`
 | Esc | Back to menu |
 | M | Music on/off |
 | Left/Right (menu) | Pick your alien |
+| Q / E (menu) | Engine class: 50 / 100 / 150 / 200 DM |
 | F1 / F2 / F3 | Debug: get a missile / fire one at yourself / skip to the podium |
 
-Balance check (headless AI races): `./gradlew balance`
+Balance check (headless AI races on every track): `./gradlew balance` (or `-Pengine=DM200`)
 Regenerate sound effects: `python tools/make_sfx.py`
 Regenerate music: `python tools/make_music.py` (needs ffmpeg), or drop your own
 `assets/music/<track file name>.ogg`

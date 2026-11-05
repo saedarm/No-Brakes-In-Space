@@ -1,7 +1,6 @@
 package com.saedarm.nobrakes;
 
 import com.badlogic.gdx.files.FileHandle;
-import com.badlogic.gdx.math.CatmullRomSpline;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
@@ -30,6 +29,7 @@ public class Track {
     public float minX, maxX, minZ, maxZ;
     public float pitStart = -1, pitEnd = -1;   // recharge strip, metres from the start line
     public int obstacleCount;                   // `obstacles: N` in the track file
+    public String tagline = "";                 // `tagline: ...` shown on the menu
 
     private final Vector3 t1 = new Vector3(), t2 = new Vector3();
 
@@ -47,6 +47,7 @@ public class Track {
         float scale = 1f;
         float[] pit = null;
         int obstacles = 0;
+        String tagline = "";
         Array<Vector3> cps = new Array<>();
         FloatArray rolls = new FloatArray();
         Array<String> tunnels = new Array<>();
@@ -57,6 +58,7 @@ public class Track {
             else if (line.startsWith("width:")) width = Float.parseFloat(line.substring(6).trim());
             else if (line.startsWith("scale:")) scale = Float.parseFloat(line.substring(6).trim());
             else if (line.startsWith("obstacles:")) obstacles = Integer.parseInt(line.substring(10).trim());
+            else if (line.startsWith("tagline:")) tagline = line.substring(8).trim();
             else if (line.startsWith("pit:")) {
                 String[] p = line.substring(4).trim().split("\\s+");
                 pit = new float[]{Float.parseFloat(p[0]), Float.parseFloat(p[1])};
@@ -76,6 +78,7 @@ public class Track {
         t.build(cps, rolls, tunnels);
         if (pit != null) { t.pitStart = pit[0]; t.pitEnd = pit[1]; }
         t.obstacleCount = obstacles;
+        t.tagline = tagline;
         return t;
     }
 
@@ -83,7 +86,7 @@ public class Track {
 
     private void build(Array<Vector3> cps, FloatArray rollIn, Array<String> tunIn) {
         int n = cps.size;
-        CatmullRomSpline<Vector3> spline = new CatmullRomSpline<>(cps.toArray(Vector3.class), true);
+        Vector3[] cp = cps.toArray(Vector3.class);
 
         // Unwrap rolls so 270 -> 0 continues to 360 instead of spinning back.
         float[] roll = new float[n + 1];
@@ -101,9 +104,9 @@ public class Track {
         byte[] ft = new byte[fine + 1];
         for (int i = 0; i <= fine; i++) {
             float u = i / (float) fine;
-            fp[i] = spline.valueAt(new Vector3(), u == 1f ? 0f : u);
             int seg = Math.min((int) (u * n), n - 1);
             float local = u * n - seg;
+            fp[i] = centripetal(cp[(seg - 1 + n) % n], cp[seg], cp[(seg + 1) % n], cp[(seg + 2) % n], local, new Vector3());
             fr[i] = MathUtils.lerp(roll[seg], roll[seg + 1], local);
             String tun = tunIn.get(seg);
             ft[i] = (byte) (tun.equals("oct") ? 1 : tun.equals("box") ? 2 : 0);
@@ -154,6 +157,29 @@ public class Track {
             minX = Math.min(minX, pos[k].x); maxX = Math.max(maxX, pos[k].x);
             minZ = Math.min(minZ, pos[k].z); maxZ = Math.max(maxZ, pos[k].z);
         }
+    }
+
+    /**
+     * Centripetal Catmull-Rom (alpha 0.5) between p1 and p2. Unlike the plain version it
+     * never overshoots into little knots when a short segment sits next to long ones
+     * (e.g. a 60 m overpass between two 300 m straights).
+     */
+    private static Vector3 centripetal(Vector3 p0, Vector3 p1, Vector3 p2, Vector3 p3, float t, Vector3 out) {
+        float t0 = 0f;
+        float t1 = t0 + Math.max(1e-3f, (float) Math.sqrt(p0.dst(p1)));
+        float t2 = t1 + Math.max(1e-3f, (float) Math.sqrt(p1.dst(p2)));
+        float t3 = t2 + Math.max(1e-3f, (float) Math.sqrt(p2.dst(p3)));
+        float tt = t1 + (t2 - t1) * t;
+        Vector3 a1 = mix(p0, p1, (tt - t0) / (t1 - t0));
+        Vector3 a2 = mix(p1, p2, (tt - t1) / (t2 - t1));
+        Vector3 a3 = mix(p2, p3, (tt - t2) / (t3 - t2));
+        Vector3 b1 = mix(a1, a2, (tt - t0) / (t2 - t0));
+        Vector3 b2 = mix(a2, a3, (tt - t1) / (t3 - t1));
+        return out.set(mix(b1, b2, (tt - t1) / (t2 - t1)));
+    }
+
+    private static Vector3 mix(Vector3 a, Vector3 b, float k) {
+        return new Vector3(a).scl(1f - k).mulAdd(b, k);
     }
 
     private static Vector3 project(Vector3 v, Vector3 axis) {

@@ -52,6 +52,9 @@ public class RaceScreen extends ScreenAdapter {
         racers.add(ai(others.get(1), 0.94f, 0.7f));
         racers.add(ai(others.get(2), 0.91f, 0.5f));
 
+        for (Racer rc : racers) rc.engine = game.engine.mult;
+        hud.engineLabel = game.engine.label;
+
         // grid: two columns, just behind the start line (crossing it starts lap 1)
         for (int i = 0; i < racers.size; i++) {
             Racer rc = racers.get(racers.size - 1 - i);

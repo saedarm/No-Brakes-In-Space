@@ -19,7 +19,11 @@ Only Sam moves things to [E].
 
 - [E] Drift + two-stage turbo (hold SHIFT while steering; release at half bar = short
   turbo, full bar = long turbo).
-- [V] Top speed 450 km/h, ~740 km/h on turbo.
+- [V] Top speed 450 km/h, ~740 km/h on turbo (at 150 DM).
+- [E] Speed classes like Mario Kart's 50/100/150cc, but dark-matter engines.
+- [V] 50 DM (x0.62, "Dark matter, decaf."), 100 DM (x0.8), 150 DM (x1.0, the original
+  tuning, default), 200 DM (x1.25, "Containment not guaranteed."). Scales top speed and
+  acceleration for everyone; steering gets a bit quicker at higher classes. Q/E on the menu.
 - [V] Corners push you to the outside, harder at speed ("you have to steer more").
 - [V] Scraping walls drains energy but can never knock you out by itself.
 - [E] It should be easier to spin out while drifting.
@@ -49,7 +53,10 @@ Only Sam moves things to [E].
 
 - [E] The tracks need obstacles.
 - [V] Three kinds: BLOCK (wall chunk, red, crash), SLIDER (wall chunk sliding side to
-  side, yellow stripes, crash), PYLON slalom (three posts, spin + 10 damage).
+  side, yellow stripes, crash), PYLON slalom (three posts 35 m apart, alternating sides of
+  the centre line; weave through or hug a wall; spin + 10 damage, knocks you off the post).
+- [V] Rivals occasionally "zone out" and miss a hazard (sloppier aliens more often), so
+  each rival crashes about once a race and you get to watch aliens fly.
 - [V] Crash = full stop for 1.6 s, 20 damage, alien launched in an arc that lands back in
   the cockpit (slide whistle), then 1.2 s of blinking crash immunity. Shield = no crash.
 - [V] `obstacles: N` in each track file; layout is seeded by the file name, so it's the
@@ -78,8 +85,13 @@ Only Sam moves things to [E].
 - [V] Width 20 m (was 12), steering speed raised to match.
 - [E] Tracks are Markdown tables in `assets/tracks/` (x, y, z, roll, tunnel), with
   `width:`, `scale:` (multiplies the points) and `pit: A B` (recharge strip, metres).
-- [V] Ringbahn (loop, hairpin, S-bend tunnel run; scale 2.5, ~35 s laps) and
-  Korkenzieher (corkscrew, helix; scale 2).
+- [E] More tracks, some of them absurd.
+- [V] Six tracks: Ringbahn (practice: loop, hairpin, S-bends), Korkenzieher (corkscrew +
+  helix), Pretzel (three loops in a row), Spin Cycle (washing machine: three barrel rolls
+  in a tunnel), Toilet Bowl (spiral down a funnel, out the pipe), I-75 Rush Hour (Dayton
+  to Cincinnati: long, straight, overpasses, heavy traffic).
+- [V] AI lap times at 150 DM: 17-37 s depending on track (`./gradlew balance`).
+- [V] Each track file has a `tagline:` shown on the menu, and its own music loop.
 - [?] Lap length feels right? 3 laps x ~35 s is about a 2-minute race.
 - [?] Track editor tool.
 

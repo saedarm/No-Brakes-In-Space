@@ -7,4 +7,5 @@ tasks.register('balance', JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
     mainClass = 'com.saedarm.nobrakes.BalanceSim'
     workingDir = rootProject.projectDir
+    if (project.hasProperty('engine')) args project.property('engine')   // ./gradlew balance -Pengine=DM200
 }
