@@ -35,7 +35,16 @@ Write decisions into `GAME_DESIGN.md`, not into chat.
 - `Hud.java` — speed (km/h), lap, place, weapon, energy and drift bars, minimap.
 - `RaceScreen.java` — input, update order, ranking, chase camera (camera "up" follows
   the track so loops roll the world).
-- `OverclockGame.java` — the track list. `Lwjgl3Launcher` — window config.
+- `MenuScreen.java` — title + track select with an orbiting preview (reuses NeonRenderer).
+- `Sfx.java` — static sound helper. `Sfx.at(name, s, vol)` fades by track distance from
+  the player. WAVs come from `tools/make_sfx.py` (edit a recipe, re-run it).
+- `BalanceSim.java` — headless AI-vs-AI races; `./gradlew balance` prints combat stats.
+  Run it after touching weapon or AI numbers.
+- `OverclockGame.java` — the track list and screen switching. `Lwjgl3Launcher` — window config.
+
+## Debug keys (in a race)
+
+- **F1** — give yourself a missile. **F2** — fire a missile at yourself from 150 m back.
 
 ## Adding a track
 
@@ -44,11 +53,13 @@ Write decisions into `GAME_DESIGN.md`, not into chat.
    `scale:` multiplies every point (sketch small, blow it up). `pit: A B` puts the
    recharge strip from A to B metres after the start line.
 2. Add the path to `OverclockGame.TRACKS`.
-3. Press **T** in game to cycle tracks.
+3. It shows up in the menu automatically; **T** in a race also cycles tracks.
 
 ## Gotchas
 
 - libGDX `Array` reuses its iterator; we set `Collections.allocateIterators = true`
   because loops over racers are nested.
+- Screens: sound loops start in `RaceScreen.show()` and stop in `hide()` — not in the
+  constructor/dispose, because the new screen is shown before the old one is disposed.
 - `glLineWidth > 1` needs the default (compatibility) GL context. Don't switch the
   launcher to GL30/core profile without replacing line rendering with quads.
